@@ -1,0 +1,2665 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Дневник</title>
+<meta name="description" content="Личный дневник: записи дня, настроение, фото и аналитика — офлайн, данные только на устройстве.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Дневник">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f1f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121426" media="(prefers-color-scheme: dark)">
+<style>
+  /* ---------- Токены ---------- */
+  @property --sky { syntax: '<color>'; inherits: true; initial-value: transparent; }
+  :root {
+    --bg: #f1f2f7; --surface: #ffffff; --surface-2: #e6e8f1; --ink: #1f2444; --muted: #5f6582;
+    --line: #d9dce8; --danger: #b42318; --on-ink: #ffffff; --mark: #f6e3a1; --star: #c98a0b; --flag: #2b3a8c;
+    --m1: #2b3a8c; --m2: #4f6cc0; --m3: #93aadb; --m4: #bdb9ae; --m5: #f1cf6e; --m6: #eaa83a; --m7: #db7a1f;
+    --serif: ui-serif, "New York", "Iowan Old Style", "Charter", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+    --tap: 44px; --content: 760px; --radius: 16px;
+    color-scheme: light;
+  }
+  /* Тёмная тема: по системе, если тема не выбрана явно, и при явном data-theme="dark" */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121426; --surface: #1a1d33; --surface-2: #252941; --ink: #e9eaf4; --muted: #a2a7c3;
+      --line: #2f3452; --danger: #ff8a7a; --on-ink: #121426; --mark: #6b5a1c; --star: #f2c14e; --flag: #a6bbe7;
+      --m1: #5465c9; --m2: #7590dc; --m3: #a6bbe7; --m4: #8f8c85; --m5: #e9c665; --m6: #e5a23a; --m7: #e9853a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+      --bg: #121426; --surface: #1a1d33; --surface-2: #252941; --ink: #e9eaf4; --muted: #a2a7c3;
+      --line: #2f3452; --danger: #ff8a7a; --on-ink: #121426; --mark: #6b5a1c; --star: #f2c14e; --flag: #a6bbe7;
+      --m1: #5465c9; --m2: #7590dc; --m3: #a6bbe7; --m4: #8f8c85; --m5: #e9c665; --m6: #e5a23a; --m7: #e9853a;
+      color-scheme: dark;
+  }
+
+  /* ---------- База ---------- */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh; min-height: 100dvh;
+    background: var(--bg); color: var(--ink);
+    font: 17px/1.45 var(--sans);
+    -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation; overscroll-behavior-y: none;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  input, select, textarea { font-size: max(16px, 1em); }
+  button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+  svg.i { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .muted { color: var(--muted); }
+  .small { font-size: 14px; }
+  mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+  /* ---------- Каркас ---------- */
+  .app { min-height: 100dvh; }
+  .nav {
+    position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
+    display: flex; justify-content: space-around;
+    padding: 6px calc(8px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--surface) 90%, transparent);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+  }
+  .nav .brand, .nav .nav-settings { display: none; }
+  .nav button {
+    flex: 1; max-width: 120px; min-height: 50px; border: 0; background: none; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-size: 11px; border-radius: 12px;
+  }
+  .nav button[aria-current="page"] { color: var(--ink); font-weight: 600; }
+  .view {
+    width: 100%; max-width: calc(var(--content) + 32px); margin: 0 auto;
+    padding: calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  }
+  .view.wide { max-width: 1120px; }
+  .head { display: flex; align-items: center; gap: 10px; min-height: 48px; margin-bottom: 8px; }
+  .head h1 { flex: 1; font-size: 30px; }
+  @media (min-width: 900px) {
+    .nav {
+      top: 0; right: auto; width: 220px; flex-direction: column; justify-content: flex-start; gap: 4px;
+      padding: calc(20px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+      border-top: 0; border-right: 1px solid var(--line);
+    }
+    .nav .brand { display: block; font: 600 24px var(--serif); padding: 4px 12px 18px; }
+    .nav button { flex: none; max-width: none; min-height: 46px; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 0 12px; font-size: 16px; }
+    .nav button[aria-current="page"] { background: var(--surface-2); }
+    .nav .nav-settings { display: flex; margin-top: auto; }
+    .app { padding-left: 220px; }
+    .view { padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+    .settings-btn { display: none; }
+    .sky { margin: 4px -12px 0; border-radius: 26px; padding: 26px 28px 24px; }
+    .memories { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  }
+
+  /* ---------- Кнопки, поля ---------- */
+  .btn {
+    min-height: var(--tap); min-width: var(--tap); padding: 0 16px; border: 0; border-radius: 12px;
+    background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--ink); color: var(--on-ink); box-shadow: none; font-weight: 600; }
+  .btn.ghost { background: none; box-shadow: none; }
+  .btn.danger { color: var(--danger); }
+  .btn.icon { padding: 0; width: var(--tap); }
+  .btn.block { width: 100%; }
+  .btn[aria-pressed="true"] { color: var(--ink); background: var(--surface-2); }
+  .btn:disabled { opacity: .5; }
+  .field {
+    min-height: var(--tap); width: 100%; padding: 10px 14px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--surface);
+  }
+  .field:focus { outline: 2px solid var(--ink); outline-offset: 0; }
+  select.field { -webkit-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 36px; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .grow { flex: 1; min-width: 0; }
+  .label { display: block; font-size: 15px; color: var(--muted); margin: 0 0 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); font-size: 15px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+  .chip .x { font-size: 18px; line-height: 1; opacity: .7; }
+  .chip.static { cursor: default; }
+  .seg { display: flex; background: var(--surface-2); border-radius: 12px; padding: 3px; gap: 3px; }
+  .seg button { flex: 1; min-height: 38px; border: 0; background: none; border-radius: 9px; color: var(--muted); font-size: 15px; }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+
+  .banner {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 12px 14px;
+    border-radius: 14px; background: var(--surface); border: 1px solid var(--line);
+  }
+  .banner p { flex: 1 1 240px; margin: 0; font-size: 15px; }
+  .banner.demo { background: color-mix(in srgb, var(--m5) 30%, var(--surface)); border-color: color-mix(in srgb, var(--m6) 50%, var(--line)); }
+
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%); z-index: 90;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    padding: 12px 18px; border-radius: 999px; background: var(--ink); color: var(--on-ink);
+    opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; font-size: 15px; text-align: center;
+  }
+  .toast.show { opacity: 1; }
+  @media (min-width: 900px) { .toast { bottom: calc(28px + env(safe-area-inset-bottom)); left: calc(50% + 110px); } }
+
+  dialog {
+    width: min(500px, calc(100vw - 24px)); max-height: calc(100dvh - 40px); padding: 20px; border: 0; border-radius: 20px;
+    background: var(--surface); color: var(--ink); overflow: auto;
+  }
+  dialog::backdrop { background: rgb(10 12 30 / .45); }
+  dialog h2 { font-size: 22px; margin-bottom: 14px; }
+  .stack { display: grid; gap: 12px; }
+  .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; flex-wrap: wrap; }
+
+  /* ---------- Настроение ---------- */
+  .moods { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .mood {
+    aspect-ratio: 1; min-height: 44px; max-height: 64px; border-radius: 50%; border: 0; background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line); font-size: clamp(22px, 6vw, 32px); line-height: 1; padding: 0;
+    display: flex; align-items: center; justify-content: center; justify-self: center; width: 100%; max-width: 64px;
+    transition: transform .15s;
+  }
+  .mood[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--mc), inset 0 0 0 30px color-mix(in srgb, var(--mc) 35%, var(--surface)); transform: scale(1.06); }
+  .mood-caption { text-align: center; min-height: 22px; margin-top: 8px; font-size: 15px; color: var(--muted); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 6px; border-radius: 999px; background: color-mix(in srgb, var(--mc) 28%, var(--surface)); font-size: 15px; }
+  .pill .e { font-size: 22px; }
+
+  /* ---------- Сегодня ---------- */
+  .sky {
+    margin: calc(-12px - env(safe-area-inset-top)) calc(-16px - env(safe-area-inset-right)) 0 calc(-16px - env(safe-area-inset-left));
+    padding: calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 20px calc(16px + env(safe-area-inset-left));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--sky) 55%, var(--bg)) 0%, color-mix(in srgb, var(--sky) 18%, var(--bg)) 65%, var(--bg) 100%);
+    transition: --sky .8s ease;
+  }
+  @media (prefers-reduced-motion: reduce) { .sky { transition: none; } }
+  .sky .top { display: flex; align-items: flex-start; gap: 8px; }
+  .date-hero { flex: 1; }
+  .date-hero .d { font: 600 clamp(36px, 9vw, 52px)/1.05 var(--serif); letter-spacing: -0.02em; }
+  .date-hero .w { font: 400 20px/1.3 var(--serif); color: var(--muted); margin-top: 4px; }
+  .streak { margin-top: 14px; font-size: 15px; color: var(--muted); }
+  .streak b { color: var(--ink); font-weight: 600; }
+  .ask { font: 500 19px var(--serif); margin: 22px 0 12px; }
+  .today-entry { margin-top: 18px; }
+  .preview {
+    display: block; width: 100%; text-align: left; border: 0; padding: 14px 16px; border-radius: var(--radius);
+    background: var(--surface); box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .preview .t { font: 600 18px var(--serif); margin-bottom: 4px; }
+  .preview .s { color: var(--muted); font-size: 15px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .section { margin-top: 28px; }
+  .section > h2 { font-size: 22px; margin-bottom: 4px; }
+  .section > .sub { color: var(--muted); font-size: 15px; margin: 0 0 12px; }
+  .strip { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; }
+  .strip button { border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); min-height: 44px; }
+  .strip .c { width: 100%; max-width: 30px; aspect-ratio: 1; border-radius: 50%; background: var(--surface-2); }
+  .strip .c.has { box-shadow: inset 0 0 0 2px var(--muted); background: var(--surface); }
+  .strip .today-mark { color: var(--ink); font-weight: 700; }
+
+  /* Воспоминания — «снимки» */
+  .memories { display: grid; gap: 14px; }
+  .memory {
+    display: grid; grid-template-columns: 1fr; text-align: left; border: 0; padding: 0; overflow: hidden;
+    background: var(--surface); border-radius: 6px; box-shadow: 0 1px 0 var(--line), 0 10px 24px -14px rgb(20 24 60 / .35);
+  }
+  .memory .ph { aspect-ratio: 16 / 10; width: 100%; object-fit: cover; display: block; background: var(--surface-2); }
+  .memory .body { padding: 14px 16px 16px; }
+  .memory .when { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .memory .thesis { font: 400 19px/1.45 var(--serif); margin-top: 6px; }
+  .memory { align-content: start; }
+  .empty-note { padding: 18px; border-radius: var(--radius); border: 1px dashed var(--line); color: var(--muted); font-size: 15px; }
+
+  /* ---------- Записи ---------- */
+  .searchbar { display: flex; gap: 8px; align-items: center; }
+  .searchbar .field { padding-left: 40px; background: var(--surface) no-repeat 12px 50% / 18px; }
+  .search-wrap { position: relative; flex: 1; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
+  .badge { min-width: 20px; height: 20px; border-radius: 10px; background: var(--ink); color: var(--on-ink); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; }
+  .month-h { font: 600 20px var(--serif); margin: 26px 0 8px; display: flex; align-items: baseline; gap: 10px; }
+  .month-h .muted { font: 400 14px var(--sans); }
+  .list { display: grid; gap: 1px; background: var(--line); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
+  .item {
+    display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: start; text-align: left; border: 0; width: 100%;
+    padding: 14px 14px 14px 0; background: var(--surface); position: relative;
+  }
+  .item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--mc, transparent); }
+  .item .day { text-align: center; padding-left: 8px; }
+  .item .day .n { font: 600 26px/1 var(--serif); }
+  .item .day .w { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .item .top { display: flex; align-items: flex-start; gap: 8px; min-height: 24px; }
+  .item .top .e { font-size: 20px; line-height: 1.2; }
+  .item .top .t { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+  .item .flags { padding-top: 3px; }
+  .item .flags { display: flex; gap: 4px; color: var(--muted); }
+  .item .flags svg { width: 16px; height: 16px; }
+  .item .s { color: var(--muted); font-size: 15px; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .thumbs { display: flex; gap: 6px; margin-top: 8px; }
+  .thumbs img, .thumbs .ph { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; background: var(--surface-2); }
+  .more-wrap { text-align: center; margin: 18px 0; }
+  .empty { padding: 48px 20px; text-align: center; color: var(--muted); }
+  .empty h2 { color: var(--ink); font-size: 22px; margin-bottom: 8px; }
+
+  /* ---------- Календарь ---------- */
+  .yearbar { display: flex; align-items: center; gap: 6px; }
+  .yearbar .y { font: 600 22px var(--serif); min-width: 70px; text-align: center; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--muted); margin: 10px 0 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .months { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 16px; margin-top: 16px; }
+  .mon h3 { font: 600 16px var(--serif); margin-bottom: 6px; }
+  .mgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .mgrid .wd { font-size: 10px; color: var(--muted); text-align: center; }
+  .cell {
+    aspect-ratio: 1; border: 0; padding: 0; border-radius: 5px; background: var(--surface-2); font-size: 10px; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; min-width: 0;
+  }
+  .cell.mood { color: #1c2033; background: var(--mc); }
+  .cell.mood.dark { color: #fff; }
+  .cell.noted { box-shadow: inset 0 0 0 1.5px var(--muted); background: var(--surface); }
+  .cell.today { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .cell.future { opacity: .35; }
+  .cal-sum { margin-top: 18px; color: var(--muted); font-size: 15px; }
+
+  /* ---------- Аналитика ---------- */
+  .yearchips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: none; }
+  .yearchips::-webkit-scrollbar { display: none; }
+  .yearchips .chip { flex: none; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-top: 14px; }
+  .kpi { background: var(--surface); padding: 14px 16px; }
+  .kpi .v { font: 600 30px/1.1 var(--serif); display: flex; align-items: baseline; gap: 6px; }
+  .kpi .v small { font: 400 15px var(--sans); color: var(--muted); }
+  .kpi .k { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .charts { display: grid; grid-template-columns: 1fr; gap: 8px 32px; }
+  @media (min-width: 1100px) { .charts { grid-template-columns: 1fr 1fr; } .charts .full { grid-column: 1 / -1; } }
+  .chart { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); min-width: 0; }
+  .chart h2 { font-size: 20px; }
+  .chart .sub { color: var(--muted); font-size: 14px; margin: 2px 0 10px; }
+  .chart .plot { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--sans); }
+  .chart svg text { fill: var(--muted); font-size: 12px; }
+  .chart svg .lbl { fill: var(--ink); }
+  .chart svg .grid { stroke: var(--line); stroke-width: 1; }
+  .chart svg .axis { stroke: var(--muted); stroke-width: 1; }
+  .ckey { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .ckey span { display: inline-flex; align-items: center; gap: 6px; }
+  .ckey i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+  .tip {
+    position: absolute; pointer-events: none; z-index: 2; background: var(--ink); color: var(--on-ink); font-size: 13px;
+    padding: 8px 10px; border-radius: 10px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); line-height: 1.4;
+  }
+  .rank { display: grid; gap: 2px; }
+  .rank button, .rank .r { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; text-align: left; border: 0; background: none; padding: 8px 0; border-bottom: 1px solid var(--line); width: 100%; }
+  .rank .e { font-size: 22px; }
+  .rank .d { font-size: 13px; color: var(--muted); }
+  .rank .tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .twocol { display: grid; grid-template-columns: 1fr; gap: 8px 28px; }
+  @media (min-width: 700px) { .twocol { grid-template-columns: 1fr 1fr; } }
+  .h3 { font: 600 17px var(--serif); margin: 14px 0 6px; }
+  .tops { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* ---------- Лист записи ---------- */
+  .sheet { position: fixed; inset: 0; z-index: 40; display: flex; justify-content: center; background: rgb(10 12 30 / .35); }
+  .sheet-panel {
+    width: 100%; height: 100%; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch;
+    animation: up .28s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes up { from { transform: translateY(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .sheet-panel { animation: none; } }
+  @media (min-width: 820px) {
+    .sheet { padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom)); }
+    .sheet-panel { max-width: 820px; border-radius: 22px; box-shadow: 0 30px 60px -30px rgb(0 0 0 / .5); }
+  }
+  .sheet-bar {
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 6px;
+    padding: calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 8px calc(10px + env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--bg) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  @media (min-width: 820px) { .sheet-bar { padding-top: 8px; } }
+  .sheet-bar .title { flex: 1; font-weight: 600; text-align: center; }
+  .sheet-body { max-width: 720px; margin: 0 auto; padding: 18px calc(18px + env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left)); }
+  .btn.on-star { color: var(--star); }
+  .btn.on-flag { color: var(--flag); }
+  .e-date { position: relative; display: inline-block; }
+  .e-date .d { font: 600 30px/1.15 var(--serif); }
+  .e-date .w { color: var(--muted); font: 400 17px var(--serif); }
+  .e-date input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; }
+  .e-block { margin-top: 24px; }
+  .e-title { font: 600 20px var(--serif); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; padding: 10px 0; width: 100%; }
+  .e-title:focus { outline: none; border-bottom-color: var(--ink); }
+  .e-text {
+    width: 100%; min-height: 220px; resize: none; border: 0; background: var(--surface); border-radius: var(--radius);
+    padding: 16px; font: 400 19px/1.6 var(--serif); box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .e-text:focus { outline: none; box-shadow: inset 0 0 0 2px var(--ink); }
+  .read-title { font: 600 24px/1.3 var(--serif); margin-top: 18px; }
+  .read-text { font: 400 19px/1.65 var(--serif); white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 14px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  .gtile { position: relative; aspect-ratio: 1; border: 0; padding: 0; border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+  .gtile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gtile .vbadge { position: absolute; left: 6px; bottom: 6px; background: rgb(0 0 0 / .55); color: #fff; font-size: 12px; padding: 2px 6px 2px 4px; border-radius: 6px; display: flex; align-items: center; gap: 2px; }
+  .gtile .vbadge svg { width: 14px; height: 14px; fill: #fff; stroke: none; }
+  .gtile .del { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgb(0 0 0 / .55); color: #fff; font-size: 18px; line-height: 1; }
+  .gtile .busy { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted); }
+  .audios { display: grid; gap: 8px; margin-top: 8px; }
+  .audio { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; background: var(--surface); border-radius: 12px; padding: 6px 6px 6px 12px; box-shadow: inset 0 0 0 1px var(--line); }
+  .audio audio { width: 100%; min-width: 0; height: 40px; }
+  .audio .small { display: none; }
+  .rec { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+  .rec .live { width: 12px; height: 12px; border-radius: 50%; background: #e5484d; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+  .tag-input { display: flex; gap: 8px; margin-top: 8px; }
+  .suggest { margin-top: 8px; }
+  .stepper { display: inline-flex; align-items: center; gap: 4px; background: var(--surface); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); }
+  .stepper .v { min-width: 76px; text-align: center; font-weight: 600; border: 0; background: none; min-height: 44px; }
+  .saved { text-align: center; color: var(--muted); font-size: 13px; margin-top: 26px; }
+  .kv { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 15px; }
+
+  /* ---------- Просмотр медиа ---------- */
+  #viewer { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; border-radius: 0; background: #000; color: #fff; }
+  #viewer::backdrop { background: #000; }
+  .vwrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .vwrap img, .vwrap video { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .vbar { position: absolute; left: 0; right: 0; top: 0; display: flex; justify-content: space-between; align-items: center; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; background: linear-gradient(rgb(0 0 0 / .5), transparent); z-index: 2; }
+  .vbar .btn, .vnav .btn { background: rgb(255 255 255 / .14); color: #fff; box-shadow: none; }
+  .vnav { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; padding: 12px 12px calc(16px + env(safe-area-inset-bottom)); z-index: 2; }
+
+  /* ---------- Блокировка ---------- */
+  .lock {
+    position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px; padding: calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+  }
+  .lock h2 { font-size: 26px; text-align: center; }
+  .lock .msg { color: var(--muted); min-height: 22px; text-align: center; font-size: 15px; }
+  .pins { display: flex; gap: 16px; }
+  .pins i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); display: block; }
+  .pins i.on { background: var(--ink); }
+  .pins.shake { animation: shake .4s; }
+  @keyframes shake { 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+  .keypad { display: grid; grid-template-columns: repeat(3, 72px); gap: 16px; }
+  .keypad button { width: 72px; height: 72px; border-radius: 50%; border: 0; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font: 400 28px var(--sans); color: var(--ink); }
+  .keypad button:active { background: var(--surface-2); }
+  .keypad .blank { visibility: hidden; }
+  .keypad .txt { font-size: 15px; background: none; box-shadow: none; }
+  .veil { position: fixed; inset: 0; z-index: 99; background: var(--bg); }
+
+  /* ---------- Настройки ---------- */
+  .set-group { margin-top: 26px; }
+  .set-group > h2 { font-size: 20px; margin-bottom: 10px; }
+  .set-list { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; }
+  .set-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; border-top: 1px solid var(--line); }
+  .set-row:first-child { border-top: 0; }
+  .set-row .grow { font-size: 16px; }
+  .set-row .note { font-size: 13px; color: var(--muted); }
+  .set-row select.field { width: auto; min-width: 140px; }
+  .set-text { font-size: 15px; color: var(--muted); line-height: 1.5; }
+  .set-text ol { padding-left: 20px; margin: 8px 0; }
+  .progress { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--ink); width: 0; transition: width .2s; }
+
+  /* ---------- Дополнения ---------- */
+  svg.i.filled { fill: currentColor; }
+  .section h2 { font-size: 22px; }
+  .lock > svg.i { width: 30px; height: 30px; color: var(--muted); }
+  img.missing { visibility: hidden; }
+  .gtile .open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; }
+  .e-date { cursor: pointer; }
+  .drows { display: grid; }
+  .drow { display: grid; grid-template-columns: minmax(84px, 34%) 1fr 66px; gap: 12px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--line); }
+  .drow .dl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+  .dbar { position: relative; height: 14px; }
+  .dbar::before { content: ""; position: absolute; left: 50%; top: -8px; bottom: -8px; width: 1px; background: var(--muted); opacity: .6; }
+  .dbar i { position: absolute; top: 0; bottom: 0; }
+  .dbar i.pos { left: 50%; background: var(--m6); border-radius: 0 4px 4px 0; }
+  .dbar i.neg { right: 50%; background: var(--m2); border-radius: 4px 0 0 4px; }
+  .drow.freq .dbar::before { display: none; }
+  .drow.freq .dbar i { left: 0; background: var(--ink); opacity: .72; border-radius: 0 4px 4px 0; }
+  .dv { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 15px; line-height: 1.2; }
+  .dv small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+  .preview .thumbs img { width: 56px; height: 56px; }
+  .gallery.read { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
+  .gallery.read .gtile { aspect-ratio: 4 / 3; }
+  .gtile.novideo { display: flex; align-items: center; justify-content: center; }
+  @media (max-width: 359px) { .moods { gap: 3px; } .mood { min-height: 0; } }
+  #ask { width: min(420px, calc(100vw - 32px)); }
+  .ask-text { margin: 0 0 18px; font-size: 17px; line-height: 1.45; }
+  .btn.danger-fill { background: var(--danger); color: var(--on-ink); box-shadow: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <nav class="nav" id="nav" aria-label="Разделы"></nav>
+  <main class="view" id="view"></main>
+</div>
+
+<dialog id="dlg"></dialog>
+<dialog id="ask" aria-label="Подтверждение"></dialog>
+
+<dialog id="viewer" aria-label="Просмотр">
+  <div class="vwrap" id="vwrap"></div>
+  <div class="vbar">
+    <button class="btn icon" id="vclose" type="button" aria-label="Закрыть">✕</button>
+    <span id="vcount"></span>
+    <span style="width:44px"></span>
+  </div>
+  <div class="vnav">
+    <button class="btn icon" id="vprev" type="button" aria-label="Предыдущее">‹</button>
+    <button class="btn icon" id="vnext" type="button" aria-label="Следующее">›</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+/* ================= Настройки приложения ================= */
+const APP_ID = 'diary';
+const APP_VERSION = '1.0.0';      // повышай вместе с CACHE в sw.js
+const DB_VERSION = 1;             // структура IndexedDB (хранилища, индексы)
+const SCHEMA_VERSION = 1;         // форма данных; при изменении — шаг в migrateData()
+const PREVIEW = !!window.__DIARY_PREVIEW__;   // превью-сборка для просмотра в Claude: только примеры, без установки
+const DEMO = PREVIEW || (() => { try { return localStorage.getItem(APP_ID + ':demo') === '1'; } catch (e) { return false; } })();
+const DB_NAME = DEMO ? 'diary-demo' : 'diary';
+
+const MOODS = [null,
+  { e: '😭', t: 'Ужасно' }, { e: '😢', t: 'Плохо' }, { e: '🙁', t: 'Так себе' }, { e: '😐', t: 'Нормально' },
+  { e: '🙂', t: 'Хорошо' }, { e: '😄', t: 'Отлично' }, { e: '🤩', t: 'Восторг' }];
+const DEFAULT_EMOTIONS = ['Радость', 'Спокойствие', 'Благодарность', 'Любовь', 'Гордость', 'Интерес', 'Вдохновение',
+  'Усталость', 'Тревога', 'Грусть', 'Раздражение', 'Злость', 'Одиночество', 'Скука', 'Стресс'];
+const DEFAULT_FACTORS = [
+  { id: 'sport', name: 'Спорт' }, { id: 'walk', name: 'Прогулка' }, { id: 'overwork', name: 'Переработка' },
+  { id: 'dayoff', name: 'Выходной' }, { id: 'friends', name: 'Друзья' }, { id: 'family', name: 'Семья' },
+  { id: 'trip', name: 'Поездка' }, { id: 'sick', name: 'Болел' }, { id: 'alcohol', name: 'Алкоголь' },
+  { id: 'screen', name: 'Экран допоздна' }];
+const DEFAULT_SETTINGS = { pinHash: null, pinSalt: null, autolock: 1, dayStart: 4, emotions: DEFAULT_EMOTIONS, factors: DEFAULT_FACTORS };
+const DEFAULT_META = { lastBackupAt: 0, lastTransferAt: 0, backupSnoozeUntil: 0 };
+
+/* ================= Утилиты ================= */
+const $ = (sel, root = document) => root.querySelector(sel);
+const clone = (x) => JSON.parse(JSON.stringify(x));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const norm = (s) => String(s || '').toLowerCase().replace(/ё/g, 'е');
+const cap = (s) => s ? s[0].toUpperCase() + s.slice(1) : s;
+
+// Построитель DOM: пользовательский текст всегда идёт через textContent.
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else if (v === true) el.setAttribute(k, '');
+    else el.setAttribute(k, v);
+  }
+  for (const k of kids.flat(Infinity)) if (k != null && k !== false) el.append(k instanceof Node ? k : String(k));
+  return el;
+}
+
+// Добавляет детей, пропуская null/false и раскрывая массивы.
+function put(el, ...kids) { for (const k of kids.flat(Infinity)) if (k != null && k !== false) el.append(k); return el; }
+
+const ICONS = {
+  today: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>',
+  book: '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7.5h6"/>',
+  calendar: '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+  chart: '<path d="M3 20h18M6 16v-5M11 16V6M16 16v-8"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  star: '<path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  flag: '<path d="M5.5 21V3.5M5.5 4h12l-2.5 4.5 2.5 4.5h-12"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3"/>',
+  play: '<path d="M8 5.5l11 6.5-11 6.5z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  filter: '<path d="M4 6h16M7 12h10M10 18h4"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  left: '<path d="M15 5l-7 7 7 7"/>',
+  right: '<path d="M9 5l7 7-7 7"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  jump: '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M10 15h6M13 12.5l3 2.5-3 2.5"/>'
+};
+function icon(name, extra = '') {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('class', ('i ' + extra).trim());
+  s.setAttribute('aria-hidden', 'true');
+  s.innerHTML = ICONS[name] || '';   // только статичная разметка иконок
+  return s;
+}
+
+/* ---------- Даты (локальные, без UTC) ---------- */
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parseYmd = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+const daysBetween = (a, b) => Math.round((parseYmd(b) - parseYmd(a)) / 864e5);
+function todayStr() { return ymd(new Date(Date.now() - (Number(settings.dayStart) || 0) * 3600e3)); }
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+const MONTHS_G = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const MONTHS_S = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const WD = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+const WD_S = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+function fmtDate(s, withYear = true) { const d = parseYmd(s); return d.getDate() + ' ' + MONTHS_G[d.getMonth()] + (withYear ? ' ' + d.getFullYear() : ''); }
+const weekday = (s) => WD[parseYmd(s).getDay()];
+function plural(n, forms) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return forms[2];
+  if (b > 1 && b < 5) return forms[1];
+  if (b === 1) return forms[0];
+  return forms[2];
+}
+const nDays = (n) => n + ' ' + plural(n, ['день', 'дня', 'дней']);
+const fmt1 = (x) => x == null || isNaN(x) ? '—' : x.toFixed(1).replace('.', ',');
+const fmtMB = (b) => b >= 1e9 ? (b / 1e9).toFixed(1).replace('.', ',') + ' ГБ' : Math.max(0.1, b / 1e6).toFixed(1).replace('.', ',') + ' МБ';
+function ago(ts) {
+  if (!ts) return 'ещё не было';
+  const d = Math.floor((Date.now() - ts) / 864e5);
+  return d <= 0 ? 'сегодня' : d === 1 ? 'вчера' : nDays(d) + ' назад';
+}
+function yearsAgo(n) { return n + ' ' + plural(n, ['год', 'года', 'лет']) + ' назад'; }
+function fmtDur(sec) { sec = Math.round(sec || 0); return Math.floor(sec / 60) + ':' + pad(sec % 60); }
+function hashStr(s) { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return x >>> 0; }
+function firstSentence(text, max = 160) {
+  const t = String(text || '').trim().replace(/\s+/g, ' ');
+  if (!t) return '';
+  const m = t.match(/^[\s\S]*?[.!?…](\s|$)/);
+  let s = (m ? m[0] : t).trim();
+  if (s.length > max) { s = s.slice(0, max); s = s.slice(0, s.lastIndexOf(' ') > 40 ? s.lastIndexOf(' ') : max) + '…'; }
+  return s;
+}
+function addUnique(arr, v) {
+  v = String(v || '').trim();
+  if (!v || arr.some((x) => norm(x) === norm(v))) return false;
+  arr.push(v); return true;
+}
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Подтверждение внутри страницы (вместо confirm(): его не показывают некоторые окна, и так нагляднее на iPad).
+function ask(message, okLabel = 'Да', danger = false) {
+  return new Promise((resolve) => {
+    const d = $('#ask');
+    let result = false;
+    d.replaceChildren(h('p', { class: 'ask-text', text: message }),
+      h('div', { class: 'dlg-actions' },
+        h('button', { class: 'btn', type: 'button', text: 'Отмена', onclick: () => d.close() }),
+        h('button', { class: 'btn ' + (danger ? 'danger-fill' : 'primary'), type: 'button', text: okLabel, onclick: () => { result = true; d.close(); } })));
+    d.onclose = () => { d.onclose = null; resolve(result); };
+    d.showModal();
+  });
+}
+
+/* ================= IndexedDB ================= */
+let db = null;
+function openDB(name) {
+  return new Promise((resolve, reject) => {
+    const r = indexedDB.open(name, DB_VERSION);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains('entries')) d.createObjectStore('entries', { keyPath: 'id' }).createIndex('date', 'date');
+      for (const s of ['media', 'thumbs', 'tombstones']) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta', { keyPath: 'key' });
+      // Новые хранилища и индексы будущих версий добавляй здесь, проверяя e.oldVersion.
+    };
+    r.onsuccess = () => { const d = r.result; d.onversionchange = () => d.close(); resolve(d); };
+    r.onerror = () => reject(r.error);
+    r.onblocked = () => reject(new Error('blocked'));
+  });
+}
+function idbTx(stores, mode, fn) {
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(stores, mode);
+    let out;
+    const r = fn(t);
+    if (r && typeof r === 'object' && 'onsuccess' in r) r.onsuccess = () => { out = r.result; };
+    t.oncomplete = () => resolve(out);
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error || new Error('abort'));
+  });
+}
+const idb = {
+  get: (s, k) => idbTx(s, 'readonly', (t) => t.objectStore(s).get(k)),
+  all: (s) => idbTx(s, 'readonly', (t) => t.objectStore(s).getAll()),
+  keys: (s) => idbTx(s, 'readonly', (t) => t.objectStore(s).getAllKeys()),
+  put: (s, v) => idbTx(s, 'readwrite', (t) => t.objectStore(s).put(v)),
+  del: (s, k) => idbTx(s, 'readwrite', (t) => t.objectStore(s).delete(k)),
+  putMany: (s, arr) => idbTx(s, 'readwrite', (t) => { const os = t.objectStore(s); for (const v of arr) os.put(v); })
+};
+function storageError(err) {
+  toast(err && err.name === 'QuotaExceededError'
+    ? 'Не хватает места на устройстве — освободите память и сохраните копию'
+    : 'Не удалось сохранить — сделайте резервную копию');
+}
+
+/* ================= Состояние ================= */
+let settings = clone(DEFAULT_SETTINGS);
+let meta = clone(DEFAULT_META);
+const entries = new Map();     // id → запись
+const byDate = new Map();      // YYYY-MM-DD → запись
+const tombs = new Map();       // id → { id, kind, deletedAt }
+let sorted = [];               // записи, новые сверху
+let tagCounts = new Map(), peopleCounts = new Map();
+
+function blankEntry(date) {
+  const now = Date.now();
+  return { id: uid(), date, title: '', text: '', mood: null, emotions: [], tags: [], people: [], factors: [],
+    sleep: null, media: [], favorite: false, milestone: false, createdAt: now, updatedAt: now };
+}
+function normEntry(raw) {
+  const e = Object.assign(blankEntry(raw.date), raw);
+  for (const k of ['emotions', 'tags', 'people', 'factors', 'media']) if (!Array.isArray(e[k])) e[k] = [];
+  e.media = e.media.filter((m) => m && m.id).map((m) => ({ id: m.id, kind: m.kind, duration: m.duration || 0 }));
+  if (e.mood != null) e.mood = Math.min(7, Math.max(1, Math.round(e.mood)));
+  e.title = e.title || ''; e.text = e.text || '';
+  return e;
+}
+const isEmpty = (e) => !e || (!e.text.trim() && !e.title.trim() && e.mood == null && !e.media.length &&
+  !e.emotions.length && !e.tags.length && !e.people.length && !e.factors.length && e.sleep == null);
+const hasDay = (d) => { const e = byDate.get(d); return !!e && !isEmpty(e); };
+
+function countInto(map, values) {
+  for (const v of values) {
+    const k = norm(v);
+    const r = map.get(k);
+    if (r) r.n++; else map.set(k, { label: v, n: 1 });
+  }
+}
+function rebuildIndex() {
+  sorted = [...entries.values()].sort((a, b) => b.date.localeCompare(a.date));
+  const t = new Map(), p = new Map();
+  for (const e of sorted) { countInto(t, e.tags); countInto(p, e.people); }
+  tagCounts = new Map([...t.values()].map((r) => [r.label, r.n]));
+  peopleCounts = new Map([...p.values()].map((r) => [r.label, r.n]));
+}
+
+async function loadAll() {
+  db = await openDB(DB_NAME);
+  const [es, ms, ts] = await Promise.all([idb.all('entries'), idb.all('meta'), idb.all('tombstones')]);
+  const metaMap = Object.fromEntries(ms.map((r) => [r.key, r.value]));
+  settings = Object.assign(clone(DEFAULT_SETTINGS), metaMap.settings || {});
+  meta = Object.assign(clone(DEFAULT_META), metaMap.state || {});
+  entries.clear(); byDate.clear(); tombs.clear();
+  for (const raw of es) { const e = normEntry(raw); entries.set(e.id, e); byDate.set(e.date, e); }
+  for (const t of ts) tombs.set(t.id, t);
+  await migrateData(metaMap.schemaVersion || SCHEMA_VERSION);
+  rebuildIndex();
+}
+
+// Приводит данные старых версий к текущей схеме. Старые записи не теряются.
+async function migrateData(from) {
+  let v = from;
+  // Пример будущего шага:
+  // if (v < 2) { for (const e of entries.values()) e.newField = e.newField ?? null; await idb.putMany('entries', [...entries.values()]); v = 2; }
+  v = SCHEMA_VERSION;
+  if (v !== from || !(await idb.get('meta', 'schemaVersion'))) await idb.put('meta', { key: 'schemaVersion', value: v });
+}
+const saveSettings = () => idb.put('meta', { key: 'settings', value: settings }).catch(storageError);
+const saveMeta = () => idb.put('meta', { key: 'state', value: meta }).catch(storageError);
+
+function syncHashtags(e) {
+  const re = /#([\p{L}\p{N}_-]{2,40})/gu;
+  for (const src of [e.text, e.title]) for (const m of String(src).matchAll(re)) addUnique(e.tags, m[1]);
+}
+async function saveEntry(e, touch = true) {
+  if (touch) e.updatedAt = Date.now();
+  syncHashtags(e);
+  const known = entries.has(e.id);
+  if (!known && isEmpty(e)) return false;
+  for (const [d, x] of byDate) if (x === e && d !== e.date) byDate.delete(d);
+  entries.set(e.id, e); byDate.set(e.date, e);
+  try { await idb.put('entries', e); } catch (err) { storageError(err); return false; }
+  rebuildIndex();
+  return true;
+}
+async function putTomb(id, kind) {
+  const t = { id, kind, deletedAt: Date.now() };
+  tombs.set(id, t);
+  await idb.put('tombstones', t).catch(() => {});
+}
+async function deleteMediaRecords(ids) {
+  if (!ids.length) return;
+  await idbTx(['media', 'thumbs'], 'readwrite', (t) => {
+    for (const id of ids) { t.objectStore('media').delete(id); t.objectStore('thumbs').delete(id); }
+  });
+  for (const id of ids) revokeMedia(id);
+}
+async function deleteEntry(e, { withMedia = true, tomb = true } = {}) {
+  entries.delete(e.id);
+  if (byDate.get(e.date) === e) byDate.delete(e.date);
+  await idb.del('entries', e.id).catch(() => {});
+  if (withMedia) {
+    const ids = e.media.map((m) => m.id);
+    await deleteMediaRecords(ids);
+    if (tomb) for (const id of ids) await putTomb(id, 'media');
+  }
+  if (tomb) await putTomb(e.id, 'entry');
+  rebuildIndex();
+}
+// Объединяет запись b в запись a (одна дата, два устройства или смена даты).
+function mergeInto(a, b) {
+  const newer = (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a, older = newer === a ? b : a;
+  const ta = a.text.trim(), tb = b.text.trim();
+  if (!ta) a.text = b.text;
+  else if (tb && !norm(ta).includes(norm(tb))) {
+    if (norm(tb).includes(norm(ta))) a.text = b.text;
+    else { const [x, y] = (a.createdAt || 0) <= (b.createdAt || 0) ? [ta, tb] : [tb, ta]; a.text = x + '\n\n— — —\n\n' + y; }
+  }
+  a.title = newer.title || older.title;
+  a.mood = newer.mood ?? older.mood;
+  a.sleep = newer.sleep ?? older.sleep;
+  for (const k of ['emotions', 'tags', 'people']) for (const v of b[k]) addUnique(a[k], v);
+  for (const f of b.factors) if (!a.factors.includes(f)) a.factors.push(f);
+  a.media = unionMedia(a.media, b.media);
+  a.favorite = a.favorite || b.favorite;
+  a.milestone = a.milestone || b.milestone;
+  a.createdAt = Math.min(a.createdAt || Date.now(), b.createdAt || Date.now());
+  a.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0);
+  return a;
+}
+function unionMedia(a, b) {
+  const out = [...a];
+  for (const m of b) if (!out.some((x) => x.id === m.id)) out.push(m);
+  return out;
+}
+
+/* ================= Медиа ================= */
+const urlCache = new Map();
+async function blobURL(store, id) {
+  const key = store + ':' + id;
+  if (urlCache.has(key)) return urlCache.get(key);
+  let rec = null;
+  try { rec = await idb.get(store, id); } catch (e) {}
+  if (!rec || !rec.blob) return null;
+  const u = URL.createObjectURL(rec.blob);
+  urlCache.set(key, u);
+  return u;
+}
+const thumbURL = (id) => blobURL('thumbs', id);
+const mediaURL = (id) => blobURL('media', id);
+function revokeMedia(id, onlyFull = false) {
+  for (const key of onlyFull ? ['media:' + id] : ['media:' + id, 'thumbs:' + id]) {
+    if (urlCache.has(key)) { URL.revokeObjectURL(urlCache.get(key)); urlCache.delete(key); }
+  }
+}
+function hydrateThumbs(root) {
+  for (const img of root.querySelectorAll('img[data-thumb]')) {
+    const id = img.getAttribute('data-thumb');
+    img.removeAttribute('data-thumb');
+    thumbURL(id).then((u) => { if (u) img.src = u; else img.classList.add('missing'); });
+  }
+}
+const canvasBlob = (c, q = 0.85) => new Promise((res) => c.toBlob((b) => res(b), 'image/jpeg', q));
+function drawScaled(src, w0, h0, max, q) {
+  const s = Math.min(1, max / Math.max(w0, h0));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w0 * s)); c.height = Math.max(1, Math.round(h0 * s));
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(src, 0, 0, c.width, c.height);
+  return canvasBlob(c, q).then((blob) => ({ blob, width: c.width, height: c.height }));
+}
+async function processPhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const w = img.naturalWidth, hh = img.naturalHeight;
+    const full = await drawScaled(img, w, hh, 2048, 0.85);
+    const th = await drawScaled(img, w, hh, 480, 0.8);
+    return { blob: full.blob, mime: 'image/jpeg', width: full.width, height: full.height, thumb: th.blob };
+  } finally { URL.revokeObjectURL(url); }
+}
+function processVideo(file) {
+  return new Promise((resolve) => {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    const url = URL.createObjectURL(file);
+    let done = false;
+    const finish = (thumb) => {
+      if (done) return; done = true;
+      clearTimeout(timer);
+      const r = { blob: file, mime: file.type || 'video/mp4', width: v.videoWidth || 0, height: v.videoHeight || 0, duration: isFinite(v.duration) ? v.duration : 0, thumb };
+      v.removeAttribute('src'); v.load(); URL.revokeObjectURL(url);
+      resolve(r);
+    };
+    const timer = setTimeout(() => finish(null), 8000);
+    v.onloadeddata = () => { try { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); } catch (e) { finish(null); } };
+    v.onseeked = async () => {
+      try { const t = await drawScaled(v, v.videoWidth, v.videoHeight, 480, 0.8); finish(t.blob); } catch (e) { finish(null); }
+    };
+    v.onerror = () => finish(null);
+    v.src = url;
+    v.load();
+  });
+}
+async function storeMedia(entry, rec) {
+  const id = uid();
+  const record = { id, entryId: entry.id, kind: rec.kind, mime: rec.mime, blob: rec.blob, width: rec.width || 0,
+    height: rec.height || 0, duration: rec.duration || 0, size: rec.blob.size, createdAt: Date.now() };
+  await idbTx(['media', 'thumbs'], 'readwrite', (t) => {
+    t.objectStore('media').put(record);
+    if (rec.thumb) t.objectStore('thumbs').put({ id, blob: rec.thumb });
+  });
+  entry.media.push({ id, kind: rec.kind, duration: rec.duration || 0 });
+  await saveEntry(entry);
+  return id;
+}
+async function addFiles(entry, files, onEach) {
+  let added = 0;
+  for (const file of files) {
+    const isVideo = (file.type || '').startsWith('video') || /\.(mov|mp4|m4v|webm)$/i.test(file.name);
+    try {
+      if (isVideo) {
+        if (file.size > 200e6 && !(await ask('Видео «' + file.name + '» занимает ' + fmtMB(file.size) + '. Такие ролики быстро заполняют память. Всё равно добавить?', 'Добавить'))) continue;
+        const r = await processVideo(file);
+        await storeMedia(entry, { kind: 'video', ...r });
+      } else {
+        const r = await processPhoto(file);
+        await storeMedia(entry, { kind: 'photo', ...r });
+      }
+      added++;
+      onEach && onEach();
+    } catch (err) {
+      if (err && err.name === 'QuotaExceededError') { storageError(err); break; }
+      toast('Не удалось добавить «' + (file.name || 'файл') + '»');
+    }
+  }
+  return added;
+}
+async function removeMedia(entry, id) {
+  entry.media = entry.media.filter((m) => m.id !== id);
+  await deleteMediaRecords([id]);
+  await putTomb(id, 'media');
+  await saveEntry(entry);
+}
+
+// Голосовые заметки
+async function startRecording(onStop) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+    toast('Запись голоса на этом устройстве недоступна'); return null;
+  }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch (e) { toast('Нет доступа к микрофону — разрешите его в настройках Safari'); return null; }
+  const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+  const type = types.find((t) => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) || '';
+  const rec = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
+  const chunks = [];
+  const started = Date.now();
+  rec.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
+  rec.onstop = () => {
+    stream.getTracks().forEach((t) => t.stop());
+    clearTimeout(limit);
+    const mime = (rec.mimeType || type || 'audio/mp4').split(';')[0];
+    onStop(new Blob(chunks, { type: mime }), (Date.now() - started) / 1000);
+  };
+  rec.start(1000);
+  const limit = setTimeout(() => { if (rec.state !== 'inactive') rec.stop(); }, 15 * 60 * 1000);
+  return { started, stop: () => { if (rec.state !== 'inactive') rec.stop(); } };
+}
+
+/* ================= ZIP (без сжатия, свой код) ================= */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+  return t;
+})();
+async function crcBlob(blob) {
+  let crc = 0xFFFFFFFF;
+  const CH = 4 << 20;
+  for (let o = 0; o < blob.size; o += CH) {
+    const buf = new Uint8Array(await blob.slice(o, o + CH).arrayBuffer());
+    for (let i = 0; i < buf.length; i++) crc = CRC_TABLE[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+async function buildZip(files, onProgress) {
+  const enc = new TextEncoder();
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const parts = [], central = [];
+  let offset = 0, i = 0;
+  if (files.length > 65000) throw new Error('too-many');
+  for (const f of files) {
+    const name = enc.encode(f.name);
+    const crc = await crcBlob(f.blob);
+    const size = f.blob.size;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(lh.buffer, name, f.blob);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true); ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, name.length, true);
+    ch.setUint32(42, offset, true);
+    central.push(ch.buffer, name);
+    offset += 30 + name.length + size;
+    if (offset > 0xFFFFFFFF) throw new Error('too-big');
+    onProgress && onProgress(++i / files.length);
+  }
+  const cdSize = central.reduce((s, p) => s + p.byteLength, 0);
+  const eocd = new DataView(new ArrayBuffer(22));
+  eocd.setUint32(0, 0x06054b50, true); eocd.setUint16(8, files.length, true); eocd.setUint16(10, files.length, true);
+  eocd.setUint32(12, cdSize, true); eocd.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, eocd.buffer], { type: 'application/zip' });
+}
+async function readZip(file) {
+  const tailLen = Math.min(file.size, 65557);
+  const tail = new DataView(await file.slice(file.size - tailLen).arrayBuffer());
+  let p = -1;
+  for (let i = tailLen - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { p = i; break; }
+  if (p < 0) throw new Error('not-zip');
+  const count = tail.getUint16(p + 10, true), cdSize = tail.getUint32(p + 12, true), cdOff = tail.getUint32(p + 16, true);
+  const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+  const dec = new TextDecoder();
+  const out = new Map();
+  let q = 0;
+  for (let n = 0; n < count; n++) {
+    if (cd.getUint32(q, true) !== 0x02014b50) throw new Error('bad-zip');
+    const method = cd.getUint16(q + 10, true), csize = cd.getUint32(q + 20, true);
+    const nl = cd.getUint16(q + 28, true), xl = cd.getUint16(q + 30, true), cl = cd.getUint16(q + 32, true);
+    const loff = cd.getUint32(q + 42, true);
+    const name = dec.decode(new Uint8Array(cd.buffer, q + 46, nl));
+    out.set(name, { method, loff, csize });
+    q += 46 + nl + xl + cl;
+  }
+  out.file = file;
+  return out;
+}
+async function zipBlob(zip, name, type = '') {
+  const it = zip.get(name);
+  if (!it) return null;
+  const lh = new DataView(await zip.file.slice(it.loff, it.loff + 30).arrayBuffer());
+  const start = it.loff + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+  const raw = zip.file.slice(start, start + it.csize, type);
+  if (it.method === 0) return raw;
+  if (it.method === 8 && 'DecompressionStream' in window) {
+    const stream = raw.stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    const b = await new Response(stream).blob();
+    return type ? new Blob([b], { type }) : b;
+  }
+  throw new Error('unsupported-zip');
+}
+const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'audio/mp4': 'm4a', 'audio/webm': 'webm', 'audio/mpeg': 'mp3' };
+const extFor = (mime, kind) => EXT[(mime || '').split(';')[0]] || (kind === 'photo' ? 'jpg' : kind === 'video' ? 'mp4' : 'm4a');
+
+/* ================= Резервная копия и перенос ================= */
+async function exportArchive({ since = 0, withMedia = true }, onProgress) {
+  await flushSaves();
+  const es = [...entries.values()].filter((e) => !isEmpty(e) && e.updatedAt >= since);
+  const files = [], mediaOut = [];
+  if (withMedia) {
+    for (const e of es) for (const d of e.media) {
+      const rec = await idb.get('media', d.id).catch(() => null);
+      if (!rec || !rec.blob || (since && rec.createdAt < since)) continue;
+      const name = 'media/' + rec.id + '.' + extFor(rec.mime, rec.kind);
+      files.push({ name, blob: rec.blob });
+      const th = await idb.get('thumbs', rec.id).catch(() => null);
+      let tname = null;
+      if (th && th.blob) { tname = 'thumbs/' + rec.id + '.jpg'; files.push({ name: tname, blob: th.blob }); }
+      const { blob, ...m } = rec;
+      mediaOut.push({ ...m, entryId: e.id, file: name, thumb: tname });
+    }
+  }
+  const data = {
+    app: APP_ID, format: 1, schemaVersion: SCHEMA_VERSION, appVersion: APP_VERSION,
+    exportedAt: new Date().toISOString(), since: since ? new Date(since).toISOString() : null, withMedia,
+    entries: es, media: mediaOut, tombstones: [...tombs.values()].filter((t) => t.deletedAt >= since),
+    settings: { emotions: settings.emotions, factors: settings.factors, dayStart: settings.dayStart }
+  };
+  files.unshift({ name: 'data.json', blob: new Blob([JSON.stringify(data)], { type: 'application/json' }) });
+  return buildZip(files, onProgress);
+}
+
+async function importFile(file, onProgress) {
+  let data, zip = null;
+  if (/\.json$/i.test(file.name) || file.type === 'application/json') {
+    data = JSON.parse(await file.text());
+  } else {
+    zip = await readZip(file);
+    const dj = await zipBlob(zip, 'data.json');
+    if (!dj) throw new Error('not-diary');
+    data = JSON.parse(await dj.text());
+  }
+  if (!data || data.app !== APP_ID || !Array.isArray(data.entries)) throw new Error('not-diary');
+  return mergeImport(data, zip, onProgress);
+}
+
+async function mergeImport(data, zip, onProgress) {
+  await flushSaves();
+  const rep = { added: 0, updated: 0, merged: 0, media: 0, removed: 0 };
+  const s = data.settings || {};
+  let settingsChanged = false;
+  for (const em of s.emotions || []) settingsChanged = addUnique(settings.emotions, em) || settingsChanged;
+  for (const f of s.factors || []) if (f && f.id && !settings.factors.some((x) => x.id === f.id)) { settings.factors.push({ id: f.id, name: f.name }); settingsChanged = true; }
+  if (settingsChanged) await saveSettings();
+
+  // 1. Удаления
+  for (const t of data.tombstones || []) {
+    if (!t || !t.id) continue;
+    const lt = tombs.get(t.id);
+    if (!lt || lt.deletedAt < t.deletedAt) { tombs.set(t.id, t); await idb.put('tombstones', t).catch(() => {}); }
+    if (t.kind === 'entry') {
+      const e = entries.get(t.id);
+      if (e && e.updatedAt <= t.deletedAt) { await deleteEntry(e, { tomb: false }); rep.removed++; }
+    } else if (t.kind === 'media') {
+      await deleteMediaRecords([t.id]);
+    }
+  }
+  // 2. Записи
+  const alias = new Map();
+  const touched = new Set();
+  for (const raw of data.entries) {
+    if (!raw || !raw.id || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date || '')) continue;
+    const inc = normEntry(clone(raw));
+    const t = tombs.get(inc.id);
+    if (t && t.deletedAt >= inc.updatedAt) continue;
+    const local = entries.get(inc.id);
+    if (local) {
+      if (inc.updatedAt > local.updatedAt) {
+        const media = unionMedia(local.media, inc.media);
+        if (byDate.get(local.date) === local) byDate.delete(local.date);
+        Object.assign(local, inc, { media });
+        byDate.set(local.date, local);
+        rep.updated++;
+      } else local.media = unionMedia(local.media, inc.media);
+      touched.add(local);
+    } else {
+      const other = byDate.get(inc.date);
+      if (other) {
+        const before = JSON.stringify(other);
+        mergeInto(other, inc);
+        alias.set(inc.id, other.id);
+        if (JSON.stringify(other) !== before) { touched.add(other); rep.merged++; }
+      }
+      else { entries.set(inc.id, inc); byDate.set(inc.date, inc); touched.add(inc); rep.added++; }
+    }
+  }
+  // 3. Медиа
+  const have = new Set(await idb.keys('media'));
+  const list = data.media || [];
+  let i = 0;
+  for (const m of list) {
+    i++; onProgress && onProgress(i / Math.max(1, list.length));
+    if (!m || !m.id || have.has(m.id) || tombs.has(m.id) || !zip) continue;
+    const blob = await zipBlob(zip, m.file, m.mime || '').catch(() => null);
+    if (!blob) continue;
+    let thumb = m.thumb ? await zipBlob(zip, m.thumb, 'image/jpeg').catch(() => null) : null;
+    if (!thumb && m.kind === 'photo') thumb = (await processPhoto(blob).catch(() => ({}))).thumb || null;
+    const { file, thumb: _t, ...rest } = m;
+    const record = { ...rest, entryId: alias.get(m.entryId) || m.entryId, blob, size: blob.size };
+    try {
+      await idbTx(['media', 'thumbs'], 'readwrite', (tx) => {
+        tx.objectStore('media').put(record);
+        if (thumb) tx.objectStore('thumbs').put({ id: m.id, blob: thumb });
+      });
+    } catch (err) { storageError(err); break; }
+    have.add(m.id); rep.media++;
+  }
+  // 4. Ссылки только на существующие медиа
+  for (const e of entries.values()) {
+    const before = e.media.length;
+    e.media = e.media.filter((d) => have.has(d.id));
+    if (e.media.length !== before) touched.add(e);
+  }
+  try { await idb.putMany('entries', [...touched].filter((e) => entries.has(e.id))); } catch (err) { storageError(err); }
+  rebuildIndex();
+  return rep;
+}
+
+async function shareOrDownload(blob, name) {
+  const file = new File([blob], name, { type: blob.type || 'application/zip' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return true; }
+    catch (e) { if (e.name === 'AbortError') return false; }
+  }
+  const url = URL.createObjectURL(file);
+  const a = h('a', { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return true;
+}
+
+/* ================= PIN-код ================= */
+async function hashPin(pin, salt) {
+  const data = new TextEncoder().encode(salt + ':' + pin);
+  if (window.crypto && crypto.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  let x = 2166136261; for (const b of data) { x ^= b; x = Math.imul(x, 16777619); } // запасной вариант без https
+  return 'f' + (x >>> 0).toString(16);
+}
+function randomSalt() {
+  const a = new Uint8Array(16); crypto.getRandomValues(a);
+  return [...a].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ================= Интерфейс: каркас ================= */
+let tab = 'today';
+const EF = { q: '', seg: 'all', year: '', moods: new Set(), emotion: '', tag: '', person: '', factor: '', media: false, shown: 40 };
+let calYear = new Date().getFullYear();
+let lightShift = 0;
+let updateWorker = null;
+let sheet = null;
+const pending = new Map();
+let locked = false;
+
+const TABS = [['today', 'Сегодня', 'today'], ['entries', 'Записи', 'book'], ['calendar', 'Календарь', 'calendar'], ['stats', 'Аналитика', 'chart']];
+function renderNav() {
+  const nav = $('#nav');
+  nav.replaceChildren();
+  put(nav,
+    h('div', { class: 'brand', text: 'Дневник' }),
+    TABS.map(([id, label, ic]) => h('button', { type: 'button', 'aria-current': tab === id ? 'page' : null, onclick: () => go(id) }, icon(ic), h('span', { text: label }))),
+    h('button', { type: 'button', class: 'nav-settings', onclick: openSettings }, icon('gear'), h('span', { text: 'Настройки' })));
+}
+function go(id) { tab = id; renderNav(); renderView(); window.scrollTo(0, 0); }
+function renderView() {
+  const v = $('#view');
+  v.className = 'view' + (tab === 'stats' ? ' wide' : '');
+  v.replaceChildren();
+  ({ today: renderToday, entries: renderEntries, calendar: renderCalendar, stats: renderStats })[tab](v);
+  hydrateThumbs(v);
+}
+const settingsBtn = () => h('button', { class: 'btn icon ghost settings-btn', type: 'button', 'aria-label': 'Настройки', onclick: openSettings }, icon('gear'));
+const head = (title, ...extra) => h('div', { class: 'head' }, h('h1', { text: title }), ...extra, settingsBtn());
+
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function showInstallHint() { if (isStandalone || PREVIEW) return false; try { return !localStorage.getItem(APP_ID + ':hint-hidden'); } catch (e) { return false; } }
+function sysBanners() {
+  const out = [];
+  if (PREVIEW) out.push(h('div', { class: 'banner demo' },
+    h('p', { text: 'Это превью с примерами за три года. Свой дневник ведите в установленном приложении — его ставят иконкой из Safari.' })));
+  else if (DEMO) out.push(h('div', { class: 'banner demo' },
+    h('p', { text: 'Демо-режим: это примеры записей за три года. Ваш настоящий дневник не затронут.' }),
+    h('button', { class: 'btn', type: 'button', onclick: exitDemo, text: 'Выйти из демо' })));
+  if (updateWorker) out.push(h('div', { class: 'banner' },
+    h('p', { text: 'Доступна новая версия приложения.' }),
+    h('button', { class: 'btn primary', type: 'button', onclick: () => updateWorker.postMessage('skipWaiting'), text: 'Обновить' })));
+  if (showInstallHint()) out.push(h('div', { class: 'banner' },
+    h('p', { text: 'Чтобы поставить иконку: «Поделиться» → «На экран „Домой“». Записи ведите уже в установленном приложении — у него своё хранилище.' }),
+    h('button', { class: 'btn', type: 'button', text: 'Понятно', onclick: () => { try { localStorage.setItem(APP_ID + ':hint-hidden', '1'); } catch (e) {} renderView(); } })));
+  return out;
+}
+
+/* ---------- Общие элементы ---------- */
+const skyColor = (m) => m ? `var(--m${m})` : 'var(--surface-2)';
+function moodRow(value, onPick) {
+  const wrap = h('div', { class: 'moods', role: 'group', 'aria-label': 'Настроение по шкале от 1 до 7' });
+  for (let m = 1; m <= 7; m++) {
+    wrap.append(h('button', { class: 'mood', type: 'button', style: `--mc: var(--m${m})`, 'aria-pressed': String(value === m),
+      'aria-label': `Настроение ${m} из 7 — ${MOODS[m].t.toLowerCase()}`, onclick: () => onPick(m) }, MOODS[m].e));
+  }
+  wrap.setValue = (v) => [...wrap.children].forEach((b, i) => b.setAttribute('aria-pressed', String(v === i + 1)));
+  return wrap;
+}
+function thumbsRow(e, n = 3) {
+  const vis = e.media.filter((m) => m.kind === 'photo' || m.kind === 'video').slice(0, n);
+  return vis.length ? h('div', { class: 'thumbs' }, vis.map((m) => h('img', { alt: '', 'data-thumb': m.id, loading: 'lazy' }))) : null;
+}
+function streakInfo() {
+  const t = todayStr();
+  let d = hasDay(t) ? t : addDays(t, -1), n = 0;
+  while (hasDay(d)) { n++; d = addDays(d, -1); }
+  return { n, todayDone: hasDay(t) };
+}
+function longestStreak(dates) {
+  let best = 0, cur = 0, prev = null;
+  for (const d of dates) { cur = prev && addDays(prev, 1) === d ? cur + 1 : 1; if (cur > best) best = cur; prev = d; }
+  return best;
+}
+function agoLabel(date) {
+  const days = daysBetween(date, todayStr());
+  if (days >= 365) return yearsAgo(Math.floor(days / 365));
+  if (days >= 30) { const m = Math.floor(days / 30); return m + ' ' + plural(m, ['месяц', 'месяца', 'месяцев']) + ' назад'; }
+  return nDays(days) + ' назад';
+}
+const factorName = (id) => (settings.factors.find((f) => f.id === id) || {}).name || id;
+const fmtSleep = (x) => fmt1(x).replace(',0', '') + ' ч';
+function openDay(d) {
+  const e = byDate.get(d);
+  if (e && !isEmpty(e)) return openEntry(e.id);
+  if (d > todayStr()) return toast('Этот день ещё не наступил');
+  openEditor(d);
+}
+
+/* ================= Сегодня ================= */
+function renderToday(v) {
+  const t = todayStr();
+  const e = byDate.get(t);
+  const capEl = h('div', { class: 'mood-caption' });
+  const streakEl = h('div', { class: 'streak' });
+  const entryEl = h('div', { class: 'today-entry' });
+  const stripEl = h('div', { class: 'strip' });
+  const fillCap = (m) => { capEl.textContent = m ? MOODS[m].t : 'Отметьте настроение одним касанием'; };
+  const fillStreak = () => {
+    const { n, todayDone } = streakInfo();
+    streakEl.replaceChildren();
+    if (n > 0) {
+      streakEl.append('Серия: ', h('b', { text: nDays(n) + ' подряд' }));
+      if (!todayDone) streakEl.append(' — запишите сегодня, чтобы её продолжить');
+    } else streakEl.append('Начните серию: отметьте сегодняшний день');
+  };
+  const fillEntry = () => {
+    const cur = byDate.get(t);
+    entryEl.replaceChildren();
+    if (cur && (cur.text.trim() || cur.title.trim() || cur.media.length)) {
+      entryEl.append(h('button', { class: 'preview', type: 'button', onclick: () => openEditor(t) },
+        h('div', { class: 't', text: cur.title || 'Запись дня' }),
+        cur.text.trim() ? h('div', { class: 's', text: cur.text }) : null,
+        thumbsRow(cur, 4),
+        h('div', { class: 'small muted', style: 'margin-top:8px', text: 'Коснитесь, чтобы дополнить' })));
+    } else {
+      entryEl.append(h('div', { class: 'row' },
+        h('button', { class: 'btn primary', type: 'button', onclick: () => openEditor(t) }, icon('edit'), 'Написать о дне'),
+        photoQuickBtn(t)));
+    }
+    hydrateThumbs(entryEl);
+  };
+  const fillStrip = () => {
+    stripEl.replaceChildren();
+    for (let i = 13; i >= 0; i--) {
+      const d = addDays(t, -i);
+      const x = byDate.get(d);
+      const has = x && !isEmpty(x);
+      stripEl.append(h('button', { type: 'button', onclick: () => openDay(d),
+        'aria-label': fmtDate(d) + ': ' + (has ? (x.mood ? MOODS[x.mood].t : 'запись без оценки') : 'нет записи') },
+      h('span', { class: 'c' + (has && !x.mood ? ' has' : ''), style: has && x.mood ? `background: var(--m${x.mood})` : null }),
+      h('span', { class: i === 0 ? 'today-mark' : null, text: WD_S[parseYmd(d).getDay()] })));
+    }
+  };
+  const row = moodRow(e ? e.mood : null, async (m) => {
+    const cur = byDate.get(t) || blankEntry(t);
+    cur.mood = cur.mood === m ? null : m;
+    if (entries.has(cur.id) && isEmpty(cur)) await deleteEntry(cur);
+    else await saveEntry(cur);
+    row.setValue(cur.mood);
+    sky.style.setProperty('--sky', skyColor(cur.mood));
+    fillCap(cur.mood); fillStreak(); fillEntry(); fillStrip();
+    toast(cur.mood ? 'Настроение сохранено' : 'Оценка снята');
+  });
+  const sky = h('section', { class: 'sky', style: `--sky: ${skyColor(e ? e.mood : null)}` },
+    h('div', { class: 'top' },
+      h('div', { class: 'date-hero' }, h('div', { class: 'd', text: fmtDate(t, false) }), h('div', { class: 'w', text: cap(weekday(t)) + ', ' + t.slice(0, 4) })),
+      settingsBtn()),
+    streakEl, h('div', { class: 'ask', text: 'Как прошёл день?' }), row, capEl, entryEl);
+  fillCap(e ? e.mood : null); fillStreak(); fillEntry(); fillStrip();
+  put(v, sky, sysBanners(), backupBanner(), memoriesSection(),
+    h('section', { class: 'section' }, h('h2', { text: 'Две недели' }),
+      h('p', { class: 'sub', text: 'Цвет — настроение дня. Коснитесь дня, чтобы открыть запись.' }), stripEl));
+}
+function photoQuickBtn(date) {
+  const input = h('input', { type: 'file', accept: 'image/*,video/*', multiple: true, hidden: true, onchange: async (ev) => {
+    const files = [...ev.target.files]; ev.target.value = '';
+    if (files.length) (await openEditor(date)).addFiles(files);
+  } });
+  return [input, h('button', { class: 'btn', type: 'button', 'aria-label': 'Добавить фото или видео', onclick: () => input.click() }, icon('image'), 'Фото')];
+}
+function backupBanner() {
+  const now = Date.now();
+  const n = sorted.filter((e) => !isEmpty(e)).length;
+  if (n < 5 || now - meta.lastBackupAt < 30 * 864e5 || now < meta.backupSnoozeUntil) return null;
+  return h('div', { class: 'banner', style: 'margin-top:20px' },
+    h('p', { text: (meta.lastBackupAt ? 'Последняя резервная копия — ' + ago(meta.lastBackupAt) + '.' : 'Резервной копии ещё не было.') +
+      ' Если удалить иконку или сбросить устройство, записи пропадут. Сохраните копию в «Файлы».' }),
+    h('button', { class: 'btn primary', type: 'button', onclick: openExport, text: 'Сохранить копию' }),
+    h('button', { class: 'btn', type: 'button', text: 'Позже', onclick: async () => { meta.backupSnoozeUntil = Date.now() + 7 * 864e5; await saveMeta(); renderView(); } }));
+}
+function memoryCard(e, when) {
+  const vis = e.media.find((m) => m.kind === 'photo' || m.kind === 'video');
+  return h('button', { class: 'memory' + (vis ? ' has-photo' : ''), type: 'button', onclick: () => openEntry(e.id) },
+    vis ? h('img', { class: 'ph', alt: '', 'data-thumb': vis.id }) : null,
+    h('div', { class: 'body' },
+      h('div', { class: 'when' }, e.mood ? h('span', { class: 'dot', style: `background: var(--m${e.mood})` }) : null,
+        h('span', { text: when + ', ' + fmtDate(e.date) })),
+      h('div', { class: 'thesis', text: e.title || firstSentence(e.text) || (e.mood ? MOODS[e.mood].e + ' ' + MOODS[e.mood].t : 'Запись без текста') })));
+}
+function memoriesSection() {
+  const t = todayStr(), md = t.slice(5), y = +t.slice(0, 4);
+  const otd = sorted.filter((e) => e.date.slice(5) === md && e.date < t && !isEmpty(e));
+  const pool = sorted.filter((e) => e.mood >= 5 && daysBetween(e.date, t) >= 7 && !otd.includes(e));
+  const out = h('div');
+  if (otd.length) out.append(h('section', { class: 'section' },
+    h('h2', { text: 'В этот день' }),
+    h('p', { class: 'sub', text: otd.length === 1 ? 'Запись этого же дня из прошлого' : 'Записи этого дня из прошлых лет' }),
+    h('div', { class: 'memories' }, otd.slice(0, 4).map((e) => memoryCard(e, yearsAgo(y - +e.date.slice(0, 4)))))));
+  if (pool.length) {
+    const e = pool[(hashStr(t) + lightShift) % pool.length];
+    out.append(h('section', { class: 'section' },
+      h('div', { class: 'row' }, h('h2', { class: 'grow', text: 'Светлое воспоминание' }),
+        pool.length > 1 ? h('button', { class: 'btn ghost', type: 'button', text: 'Другое', onclick: () => { lightShift++; renderView(); } }) : null),
+      h('p', { class: 'sub', text: 'Один из хороших дней из архива' }),
+      h('div', { class: 'memories' }, memoryCard(e, agoLabel(e.date)))));
+  }
+  if (!otd.length && !pool.length) out.append(h('section', { class: 'section' },
+    h('h2', { text: 'Воспоминания' }),
+    h('div', { class: 'empty-note', text: 'Здесь появятся записи этого дня из прошлых лет и светлые дни из архива. Достаточно пары строк и оценки — первое воспоминание появится через неделю.' })));
+  return out;
+}
+
+/* ================= Записи ================= */
+const hayCache = new Map();
+function hay(e) {
+  const c = hayCache.get(e.id);
+  if (c && c.u === e.updatedAt) return c.s;
+  const s = norm([e.title, e.text, e.tags.join(' '), e.people.join(' '), e.emotions.join(' ')].join(' '));
+  hayCache.set(e.id, { u: e.updatedAt, s });
+  return s;
+}
+const searchTerms = () => norm(EF.q.trim()).split(/\s+/).filter(Boolean);
+function filterEntries() {
+  const terms = searchTerms();
+  const has = (arr, v) => arr.some((x) => norm(x) === norm(v));
+  return sorted.filter((e) => {
+    if (isEmpty(e)) return false;
+    if (EF.seg === 'fav' && !e.favorite) return false;
+    if (EF.seg === 'ms' && !e.milestone) return false;
+    if (EF.year && !e.date.startsWith(EF.year)) return false;
+    if (EF.moods.size && !EF.moods.has(e.mood)) return false;
+    if (EF.emotion && !has(e.emotions, EF.emotion)) return false;
+    if (EF.tag && !has(e.tags, EF.tag)) return false;
+    if (EF.person && !has(e.people, EF.person)) return false;
+    if (EF.factor && !e.factors.includes(EF.factor)) return false;
+    if (EF.media && !e.media.length) return false;
+    if (terms.length) { const s = hay(e); if (!terms.every((x) => s.includes(x))) return false; }
+    return true;
+  });
+}
+const activeFilterCount = () => (EF.year ? 1 : 0) + (EF.moods.size ? 1 : 0) + (EF.emotion ? 1 : 0) + (EF.tag ? 1 : 0) + (EF.person ? 1 : 0) + (EF.factor ? 1 : 0) + (EF.media ? 1 : 0);
+function resetFilters() { Object.assign(EF, { year: '', emotion: '', tag: '', person: '', factor: '', media: false, shown: 40 }); EF.moods.clear(); }
+function yearsList() {
+  const s = new Set(sorted.filter((e) => !isEmpty(e)).map((e) => +e.date.slice(0, 4)));
+  s.add(+todayStr().slice(0, 4));
+  return [...s].sort((a, b) => b - a);
+}
+function highlight(text, terms) {
+  if (!terms.length || !text) return [text];
+  const n = norm(text), ranges = [];
+  for (const t of terms) { let i = 0; while ((i = n.indexOf(t, i)) !== -1) { ranges.push([i, i + t.length]); i += t.length; } }
+  if (!ranges.length) return [text];
+  ranges.sort((a, b) => a[0] - b[0]);
+  const out = []; let pos = 0;
+  for (const [a, b] of ranges) {
+    if (a < pos) continue;
+    if (a > pos) out.push(text.slice(pos, a));
+    out.push(h('mark', { text: text.slice(a, b) }));
+    pos = b;
+  }
+  if (pos < text.length) out.push(text.slice(pos));
+  return out;
+}
+function snippetAround(text, terms) {
+  const t = text.replace(/\s+/g, ' ').trim();
+  if (!terms.length) return t.slice(0, 280);
+  const n = norm(t);
+  const idx = Math.min(...terms.map((x) => { const i = n.indexOf(x); return i < 0 ? Infinity : i; }));
+  if (!isFinite(idx) || idx < 90) return t.slice(0, 280);
+  return '…' + t.slice(idx - 50, idx + 230);
+}
+function entryItem(e, terms) {
+  const d = parseYmd(e.date);
+  const lead = e.title || firstSentence(e.text, 110) || (e.mood ? MOODS[e.mood].t : 'Без текста');
+  const rest = e.title || terms.length ? e.text : e.text.trim().slice(firstSentence(e.text, 110).replace(/…$/, '').length).trim();
+  return h('button', { class: 'item', type: 'button', style: e.mood ? `--mc: var(--m${e.mood})` : null, onclick: () => openEntry(e.id) },
+    h('div', { class: 'day' }, h('div', { class: 'n', text: d.getDate() }), h('div', { class: 'w', text: WD_S[d.getDay()] })),
+    h('div', { class: 'grow' },
+      h('div', { class: 'top' },
+        e.mood ? h('span', { class: 'e', role: 'img', 'aria-label': MOODS[e.mood].t, text: MOODS[e.mood].e }) : null,
+        h('span', { class: 't' }, highlight(lead, terms)),
+        h('span', { class: 'flags' }, e.favorite ? icon('star', 'filled') : null, e.milestone ? icon('flag', 'filled') : null,
+          e.media.some((m) => m.kind === 'video') ? icon('video') : null, e.media.some((m) => m.kind === 'audio') ? icon('mic') : null)),
+      rest ? h('div', { class: 's' }, highlight(snippetAround(rest, terms), terms)) : null,
+      thumbsRow(e)));
+}
+function renderEntries(v) {
+  const search = h('input', { class: 'field', type: 'search', placeholder: 'Поиск по записям', 'aria-label': 'Поиск по записям',
+    enterkeyhint: 'search', autocomplete: 'off', oninput: debounce((ev) => { EF.q = ev.target.value; EF.shown = 40; fillList(); }, 150) });
+  search.value = EF.q;
+  const fc = activeFilterCount();
+  const jump = h('label', { class: 'btn icon', 'aria-label': 'Перейти к дате', style: 'position:relative' }, icon('jump'),
+    h('input', { type: 'date', max: todayStr(), 'aria-label': 'Перейти к дате', style: 'position:absolute;inset:0;opacity:0;width:100%;height:100%',
+      onchange: (ev) => { const d = ev.target.value; ev.target.value = ''; if (d) jumpToDate(d); } }));
+  const chipsEl = h('div', { class: 'chips', style: 'margin-top:12px' });
+  v.append(head('Записи'), ...sysBanners(),
+    h('div', { class: 'searchbar' },
+      h('div', { class: 'search-wrap' }, icon('search'), search),
+      h('button', { class: 'btn', type: 'button', 'aria-label': 'Фильтры', onclick: openFilters }, icon('filter'), fc ? h('span', { class: 'badge', text: fc }) : null),
+      jump),
+    h('div', { class: 'seg', role: 'group', 'aria-label': 'Что показать', style: 'margin-top:12px' },
+      [['all', 'Все'], ['fav', 'Избранное'], ['ms', 'Вехи']].map(([k, l]) => h('button', { type: 'button', 'aria-pressed': String(EF.seg === k), text: l,
+        onclick: () => { EF.seg = k; EF.shown = 40; renderView(); } }))),
+    chipsEl, h('div', { id: 'elist' }));
+  const items = [];
+  if (EF.year) items.push([EF.year + ' год', () => { EF.year = ''; }]);
+  if (EF.moods.size) items.push(['Настроение ' + [...EF.moods].sort().map((m) => MOODS[m].e).join(' '), () => EF.moods.clear()]);
+  if (EF.emotion) items.push([EF.emotion, () => { EF.emotion = ''; }]);
+  if (EF.tag) items.push(['#' + EF.tag, () => { EF.tag = ''; }]);
+  if (EF.person) items.push([EF.person, () => { EF.person = ''; }]);
+  if (EF.factor) items.push([factorName(EF.factor), () => { EF.factor = ''; }]);
+  if (EF.media) items.push(['С медиа', () => { EF.media = false; }]);
+  chipsEl.append(...items.map(([l, fn]) => h('button', { class: 'chip', type: 'button', 'aria-label': 'Убрать фильтр ' + l,
+    onclick: () => { fn(); EF.shown = 40; renderView(); } }, l, h('span', { class: 'x', text: '×' }))));
+  chipsEl.hidden = !items.length;
+  fillList();
+}
+function fillList() {
+  const el = $('#elist');
+  if (!el) return;
+  el.replaceChildren();
+  if (!sorted.some((e) => !isEmpty(e))) {
+    el.append(h('div', { class: 'empty' }, h('h2', { text: 'Здесь будут ваши записи' }),
+      h('p', { text: 'Начните с сегодняшнего дня: отметьте настроение и напишите пару строк.' }),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => openEditor(todayStr()), text: 'Написать о дне' })));
+    return;
+  }
+  const res = filterEntries(), terms = searchTerms();
+  if (terms.length || activeFilterCount() || EF.seg !== 'all') {
+    el.append(h('p', { class: 'muted small', style: 'margin:14px 2px 0', text: res.length ? 'Найдено: ' + res.length + ' ' + plural(res.length, ['запись', 'записи', 'записей']) : '' }));
+  }
+  if (!res.length) {
+    el.append(h('div', { class: 'empty' }, h('h2', { text: 'Ничего не нашлось' }),
+      h('p', { text: EF.seg === 'ms' && !terms.length && !activeFilterCount() ? 'Отмечайте важные дни флажком в записи — они соберутся здесь.' :
+        EF.seg === 'fav' && !terms.length && !activeFilterCount() ? 'Отмечайте любимые записи звёздочкой — они соберутся здесь.' :
+          'Попробуйте другое слово или уберите часть фильтров.' })));
+    return;
+  }
+  const counts = new Map();
+  for (const e of res) { const k = e.date.slice(0, 7); counts.set(k, (counts.get(k) || 0) + 1); }
+  let cur = null, list = null;
+  for (const e of res.slice(0, EF.shown)) {
+    const k = e.date.slice(0, 7);
+    if (k !== cur) {
+      cur = k;
+      const d = parseYmd(e.date), c = counts.get(k);
+      el.append(h('h2', { class: 'month-h' }, MONTHS[d.getMonth()] + ' ' + d.getFullYear(), h('span', { class: 'muted', text: c + ' ' + plural(c, ['запись', 'записи', 'записей']) })));
+      list = h('div', { class: 'list' });
+      el.append(list);
+    }
+    list.append(entryItem(e, terms));
+  }
+  if (res.length > EF.shown) el.append(h('div', { class: 'more-wrap' },
+    h('button', { class: 'btn', type: 'button', text: 'Показать ещё (' + (res.length - EF.shown) + ')', onclick: () => { EF.shown += 60; fillList(); } })));
+  hydrateThumbs(el);
+}
+async function jumpToDate(d) {
+  const e = byDate.get(d);
+  if (e && !isEmpty(e)) return openEntry(e.id);
+  if (d > todayStr()) return toast('Этот день ещё не наступил');
+  if (await ask('За ' + fmtDate(d) + ' записи нет. Создать запись за этот день?', 'Создать')) openEditor(d);
+}
+function openFilters() {
+  const dlg = $('#dlg');
+  const showBtn = h('button', { class: 'btn primary', type: 'button', onclick: () => dlg.close() });
+  const update = () => { EF.shown = 40; const n = filterEntries().length; showBtn.textContent = 'Показать ' + n + ' ' + plural(n, ['запись', 'записи', 'записей']); };
+  const sel = (label, value, options, set) => h('label', { class: 'stack', style: 'gap:6px' },
+    h('span', { class: 'label', style: 'margin:0', text: label }),
+    h('select', { class: 'field', onchange: (ev) => { set(ev.target.value); update(); } },
+      h('option', { value: '', text: 'Все' }), options.map(([v, l]) => h('option', { value: v, text: l, selected: v === value }))));
+  const byCount = (map) => [...map.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  dlg.replaceChildren(h('h2', { text: 'Фильтры' }),
+    h('div', { class: 'stack' },
+      sel('Год', EF.year, yearsList().map((y) => [String(y), String(y)]), (x) => { EF.year = x; }),
+      h('div', null, h('span', { class: 'label', text: 'Настроение' }),
+        h('div', { class: 'chips' }, [1, 2, 3, 4, 5, 6, 7].map((m) => h('button', { class: 'chip', type: 'button', style: 'font-size:22px',
+          'aria-pressed': String(EF.moods.has(m)), 'aria-label': MOODS[m].t, text: MOODS[m].e,
+          onclick: (ev) => { if (EF.moods.has(m)) EF.moods.delete(m); else EF.moods.add(m); ev.currentTarget.setAttribute('aria-pressed', String(EF.moods.has(m))); update(); } })))),
+      sel('Эмоция', EF.emotion, settings.emotions.map((x) => [x, x]), (x) => { EF.emotion = x; }),
+      sel('Тег', EF.tag, byCount(tagCounts).map((k) => [k, '#' + k]), (x) => { EF.tag = x; }),
+      sel('Человек', EF.person, byCount(peopleCounts).map((k) => [k, k]), (x) => { EF.person = x; }),
+      sel('Фактор дня', EF.factor, settings.factors.map((f) => [f.id, f.name]), (x) => { EF.factor = x; }),
+      h('label', { class: 'row', style: 'min-height:44px' },
+        h('input', { type: 'checkbox', checked: EF.media, style: 'width:22px;height:22px', onchange: (ev) => { EF.media = ev.target.checked; update(); } }),
+        'Только с фото, видео или голосом')),
+    h('div', { class: 'dlg-actions' }, h('button', { class: 'btn', type: 'button', text: 'Сбросить', onclick: () => { resetFilters(); dlg.close(); } }), showBtn));
+  dlg.onclose = () => { dlg.onclose = null; if (tab === 'entries') renderView(); };
+  update();
+  dlg.showModal();
+}
+
+/* ================= Календарь ================= */
+function renderCalendar(v) {
+  const ys = yearsList(), minY = ys[ys.length - 1], maxY = ys[0];
+  calYear = Math.min(maxY, Math.max(minY, calYear));
+  const t = todayStr();
+  const months = h('div', { class: 'months' });
+  for (let m = 0; m < 12; m++) {
+    const off = (new Date(calYear, m, 1).getDay() + 6) % 7, dim = new Date(calYear, m + 1, 0).getDate();
+    const grid = h('div', { class: 'mgrid' }, ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'].map((w) => h('span', { class: 'wd', 'aria-hidden': 'true', text: w })));
+    for (let i = 0; i < off; i++) grid.append(h('span'));
+    for (let d = 1; d <= dim; d++) {
+      const ds = calYear + '-' + pad(m + 1) + '-' + pad(d);
+      const e = byDate.get(ds), has = e && !isEmpty(e);
+      let cls = 'cell';
+      if (has && e.mood) cls += ' mood' + (e.mood <= 2 ? ' dark' : '');
+      else if (has) cls += ' noted';
+      if (ds === t) cls += ' today';
+      if (ds > t) cls += ' future';
+      grid.append(h('button', { class: cls, type: 'button', text: d, style: has && e.mood ? `--mc: var(--m${e.mood})` : null,
+        'aria-label': fmtDate(ds) + ': ' + (has ? (e.mood ? MOODS[e.mood].t : 'запись без оценки') : 'нет записи'), onclick: () => openDay(ds) }));
+    }
+    months.append(h('div', { class: 'mon' }, h('h3', { text: MONTHS[m] }), grid));
+  }
+  const ye = sorted.filter((e) => e.date.startsWith(String(calYear)) && !isEmpty(e));
+  const a = avgOf(ye.filter((e) => e.mood).map((e) => e.mood));
+  v.append(head('Календарь'), ...sysBanners(),
+    h('div', { class: 'yearbar' },
+      h('button', { class: 'btn icon', type: 'button', 'aria-label': 'Предыдущий год', disabled: calYear <= minY, onclick: () => { calYear--; renderView(); } }, icon('left')),
+      h('div', { class: 'y', text: calYear }),
+      h('button', { class: 'btn icon', type: 'button', 'aria-label': 'Следующий год', disabled: calYear >= maxY, onclick: () => { calYear++; renderView(); } }, icon('right'))),
+    h('div', { class: 'legend' }, [1, 2, 3, 4, 5, 6, 7].map((m) => h('span', null, h('i', { class: 'dot', style: `background: var(--m${m})` }), MOODS[m].e)),
+      h('span', null, h('i', { class: 'dot', style: 'box-shadow: inset 0 0 0 1.5px var(--muted)' }), 'без оценки')),
+    months,
+    h('p', { class: 'cal-sum', text: ye.length ? `За ${calYear} год: ${ye.length} ${plural(ye.length, ['запись', 'записи', 'записей'])}, среднее настроение ${fmt1(a)}${a ? ' ' + MOODS[Math.round(a)].e : ''}` : `За ${calYear} год записей пока нет` }));
+}
+const avgOf = (arr) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null;
+
+/* ================= Лист записи ================= */
+function openSheet() {
+  closeSheetNow();
+  const panel = h('div', { class: 'sheet-panel', role: 'dialog', 'aria-modal': 'true' });
+  const el = h('div', { class: 'sheet' }, panel);
+  el.addEventListener('click', (ev) => { if (ev.target === el) closeSheet(); });
+  document.body.append(el);
+  document.body.style.overflow = 'hidden';
+  sheet = { el, panel, onClose: null };
+  return sheet;
+}
+async function closeSheet() {
+  if (!sheet) return;
+  const s = sheet;
+  if (s.onClose && (await s.onClose()) === false) return;
+  if (sheet === s) closeSheetNow();
+  renderView();
+}
+function closeSheetNow() { if (sheet) { sheet.el.remove(); sheet = null; document.body.style.overflow = ''; } }
+const block = (label, ...kids) => h('div', { class: 'e-block' }, label ? h('div', { class: 'label', text: label }) : null, ...kids);
+function toggleBtn(e, key, iconName, onLabel, offLabel, onClass, onMsg) {
+  const b = h('button', { class: 'btn icon ghost', type: 'button' });
+  const paint = () => {
+    b.replaceChildren(icon(iconName, e[key] ? 'filled' : ''));
+    b.classList.toggle(onClass, !!e[key]);
+    b.setAttribute('aria-pressed', String(!!e[key]));
+    b.setAttribute('aria-label', e[key] ? onLabel : offLabel);
+  };
+  b.onclick = async () => {
+    e[key] = !e[key]; paint();
+    if (entries.has(e.id) || !isEmpty(e)) await saveEntry(e);
+    toast(e[key] ? onMsg : 'Отметка снята');
+  };
+  paint();
+  return b;
+}
+const starBtn = (e) => toggleBtn(e, 'favorite', 'star', 'Убрать из избранного', 'В избранное', 'on-star', 'Добавлено в избранное');
+const flagBtn = (e) => toggleBtn(e, 'milestone', 'flag', 'Это веха — снять отметку', 'Отметить как важное событие', 'on-flag', 'Отмечено как веха');
+function dateBlock(date) {
+  return h('div', { class: 'e-date' }, h('div', { class: 'd', text: fmtDate(date) }), h('div', { class: 'w', text: cap(weekday(date)) }));
+}
+function metaBlock(e) {
+  const items = [];
+  if (e.tags.length) items.push(h('span', { text: e.tags.map((x) => '#' + x).join(' ') }));
+  if (e.people.length) items.push(h('span', { text: 'С кем: ' + e.people.join(', ') }));
+  if (e.factors.length) items.push(h('span', { text: 'День: ' + e.factors.map(factorName).join(', ').toLowerCase() }));
+  if (e.sleep != null) items.push(h('span', { text: 'Сон: ' + fmtSleep(e.sleep) }));
+  return items.length ? h('div', { class: 'e-block kv' }, items) : null;
+}
+function mediaBlock(e, editable, refresh) {
+  const vis = e.media.filter((m) => m.kind === 'photo' || m.kind === 'video');
+  const aud = e.media.filter((m) => m.kind === 'audio');
+  if (!vis.length && !aud.length) return null;
+  const wrap = h('div', { class: 'e-block' });
+  if (vis.length) wrap.append(h('div', { class: 'gallery' + (editable ? '' : ' read') }, vis.map((m, i) => h('div', { class: 'gtile' },
+    h('button', { type: 'button', class: 'open', 'aria-label': m.kind === 'video' ? 'Открыть видео' : 'Открыть фото', onclick: () => openViewer(vis, i) },
+      h('img', { alt: '', 'data-thumb': m.id, loading: 'lazy' })),
+    m.kind === 'video' ? h('span', { class: 'vbadge' }, icon('play'), fmtDur(m.duration)) : null,
+    editable ? h('button', { class: 'del', type: 'button', 'aria-label': 'Удалить', text: '×', onclick: async () => {
+      if (!(await ask(m.kind === 'video' ? 'Удалить это видео?' : 'Удалить это фото?', 'Удалить', true))) return;
+      await removeMedia(e, m.id); refresh && refresh();
+    } }) : null))));
+  if (aud.length) {
+    const list = h('div', { class: 'audios' });
+    for (const m of aud) {
+      const a = h('audio', { controls: true, preload: 'metadata' });
+      mediaURL(m.id).then((u) => { if (u) a.src = u; });
+      list.append(h('div', { class: 'audio' }, icon('mic'), h('span', { class: 'small muted', text: fmtDur(m.duration) }), a,
+        editable ? h('button', { class: 'btn icon ghost danger', type: 'button', 'aria-label': 'Удалить голосовую заметку', onclick: async () => {
+          if (!(await ask('Удалить голосовую заметку?', 'Удалить', true))) return;
+          await removeMedia(e, m.id); refresh && refresh();
+        } }, icon('trash')) : null));
+    }
+    wrap.append(list);
+  }
+  return wrap;
+}
+function openEntry(id) {
+  const e = entries.get(id);
+  if (!e) return;
+  renderEntryView(e, openSheet());
+}
+function renderEntryView(e, s) {
+  const bar = h('div', { class: 'sheet-bar' },
+    h('button', { class: 'btn ghost', type: 'button', onclick: closeSheet }, icon('left'), 'Назад'),
+    h('div', { class: 'title' }), starBtn(e), flagBtn(e),
+    h('button', { class: 'btn ghost', type: 'button', onclick: () => renderEditorInto(e, s) }, icon('edit'), 'Изменить'));
+  const body = h('div', { class: 'sheet-body' },
+    dateBlock(e.date),
+    (e.mood || e.emotions.length) ? h('div', { class: 'row', style: 'margin-top:14px' },
+      e.mood ? h('span', { class: 'pill', style: `--mc: var(--m${e.mood})` }, h('span', { class: 'e', text: MOODS[e.mood].e }), MOODS[e.mood].t) : null,
+      e.emotions.map((x) => h('span', { class: 'chip static', text: x }))) : null,
+    e.title ? h('div', { class: 'read-title', text: e.title }) : null,
+    e.text.trim() ? h('div', { class: 'read-text', text: e.text }) : null,
+    !e.title && !e.text.trim() ? h('p', { class: 'muted', style: 'margin-top:18px', text: 'Текста пока нет. Нажмите «Изменить», чтобы дописать.' }) : null,
+    mediaBlock(e, false), metaBlock(e),
+    h('div', { class: 'e-block', style: 'text-align:center' },
+      h('button', { class: 'btn ghost danger', type: 'button', onclick: () => confirmDelete(e) }, icon('trash'), 'Удалить запись')));
+  s.onClose = null;
+  s.panel.replaceChildren(bar, body);
+  s.panel.scrollTop = 0;
+  hydrateThumbs(body);
+}
+async function confirmDelete(e) {
+  if (!(await ask('Удалить запись за ' + fmtDate(e.date) + '? Фото, видео и голос этой записи тоже удалятся.', 'Удалить', true))) return;
+  cancelPending(e);
+  await deleteEntry(e);
+  closeSheetNow(); renderView();
+  toast('Запись удалена');
+}
+function scheduleSave(e, savedEl) {
+  const p = pending.get(e.id);
+  if (p) clearTimeout(p.timer);
+  if (savedEl) savedEl.textContent = 'Сохраняю…';
+  const timer = setTimeout(async () => {
+    pending.delete(e.id);
+    const ok = await saveEntry(e);
+    if (savedEl) savedEl.textContent = ok ? 'Сохранено' : entries.has(e.id) ? 'Не удалось сохранить' : 'Запись появится, как только вы что-нибудь добавите';
+  }, 400);
+  pending.set(e.id, { e, timer, savedEl });
+}
+async function flushSaves() {
+  const list = [...pending.values()];
+  pending.clear();
+  for (const p of list) { clearTimeout(p.timer); const ok = await saveEntry(p.e); if (p.savedEl && ok) p.savedEl.textContent = 'Сохранено'; }
+}
+function cancelPending(e) { const p = pending.get(e.id); if (p) { clearTimeout(p.timer); pending.delete(e.id); } }
+async function changeDate(e, nd) {
+  if (!nd || nd === e.date) return null;
+  if (nd > todayStr()) { toast('Нельзя выбрать будущий день'); return null; }
+  const other = byDate.get(nd);
+  if (other && other !== e) {
+    if (!(await ask('На ' + fmtDate(nd) + ' уже есть запись. Объединить эту запись с ней?', 'Объединить'))) return null;
+    cancelPending(e);
+    mergeInto(other, e);
+    for (const m of e.media) {
+      const r = await idb.get('media', m.id).catch(() => null);
+      if (r) { r.entryId = other.id; await idb.put('media', r).catch(() => {}); }
+    }
+    if (entries.has(e.id)) await deleteEntry(e, { withMedia: false });
+    await saveEntry(other);
+    toast('Записи объединены');
+    return other;
+  }
+  if (byDate.get(e.date) === e) byDate.delete(e.date);
+  e.date = nd;
+  if (entries.has(e.id)) await saveEntry(e);
+  return e;
+}
+async function openEditor(dateOrEntry) {
+  const e = typeof dateOrEntry === 'string' ? (byDate.get(dateOrEntry) || blankEntry(dateOrEntry)) : dateOrEntry;
+  return renderEditorInto(e, openSheet());
+}
+function tagEditor(list, counts, prefix, placeholder, onChange) {
+  const chipsEl = h('div', { class: 'chips' });
+  const sug = h('div', { class: 'chips suggest' });
+  const input = h('input', { class: 'field', placeholder, enterkeyhint: 'done', autocomplete: 'off', autocapitalize: prefix ? 'none' : 'words', 'aria-label': placeholder });
+  const renderChips = () => {
+    chipsEl.replaceChildren(...list.map((x) => h('button', { class: 'chip', type: 'button', 'aria-label': 'Убрать ' + x,
+      onclick: () => { list.splice(list.indexOf(x), 1); renderChips(); renderSug(); onChange(); } }, prefix + x, h('span', { class: 'x', text: '×' }))));
+    chipsEl.hidden = !list.length;
+  };
+  const renderSug = () => {
+    const q = norm(input.value.replace(/^#/, '').trim());
+    const opts = [...counts.entries()].filter(([k]) => !list.some((x) => norm(x) === norm(k)) && (!q || norm(k).includes(q)))
+      .sort((a, b) => b[1] - a[1]).slice(0, 8);
+    sug.replaceChildren(...opts.map(([k]) => h('button', { class: 'chip', type: 'button', text: prefix + k,
+      onclick: () => { addUnique(list, k); input.value = ''; renderChips(); renderSug(); onChange(); } })));
+    sug.hidden = !opts.length;
+  };
+  const add = () => {
+    let any = false;
+    for (const part of input.value.split(',')) any = addUnique(list, part.replace(/^#/, '').trim()) || any;
+    input.value = ''; renderChips(); renderSug();
+    if (any) onChange();
+  };
+  input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ',') { ev.preventDefault(); add(); } });
+  input.addEventListener('input', renderSug);
+  input.addEventListener('blur', () => { if (input.value.trim()) add(); });
+  renderChips(); renderSug();
+  return h('div', null, chipsEl, h('div', { class: 'tag-input' }, h('div', { class: 'grow' }, input), h('button', { class: 'btn', type: 'button', text: 'Добавить', onmousedown: (ev) => ev.preventDefault(), onclick: add })), sug);
+}
+function renderEditorInto(e, s) {
+  let rec = null;
+  const saved = h('div', { class: 'saved', text: entries.has(e.id) ? 'Изменения сохраняются автоматически' : 'Запись появится, как только вы что-нибудь добавите' });
+  const changed = () => scheduleSave(e, saved);
+
+  const dateD = h('div', { class: 'd', text: fmtDate(e.date) });
+  const dateW = h('div', { class: 'w', text: cap(weekday(e.date)) + ' — изменить дату' });
+  const dateInput = h('input', { type: 'date', max: todayStr(), 'aria-label': 'Дата записи', onchange: async (ev) => {
+    const res = await changeDate(e, ev.target.value);
+    if (res && res !== e) { renderEditorInto(res, s); return; }
+    ev.target.value = e.date; dateD.textContent = fmtDate(e.date); dateW.textContent = cap(weekday(e.date)) + ' — изменить дату';
+  } });
+  dateInput.value = e.date;
+
+  const capEl = h('div', { class: 'mood-caption', text: e.mood ? MOODS[e.mood].t : 'Как прошёл день?' });
+  const row = moodRow(e.mood, (m) => {
+    e.mood = e.mood === m ? null : m;
+    row.setValue(e.mood);
+    capEl.textContent = e.mood ? MOODS[e.mood].t : 'Как прошёл день?';
+    changed();
+  });
+
+  const emoList = [...settings.emotions];
+  for (const x of e.emotions) if (!emoList.some((y) => norm(y) === norm(x))) emoList.push(x);
+  const emo = h('div', { class: 'chips' }, emoList.map((x) => {
+    const b = h('button', { class: 'chip', type: 'button', text: x, 'aria-pressed': String(e.emotions.some((y) => norm(y) === norm(x))) });
+    b.onclick = () => {
+      const i = e.emotions.findIndex((y) => norm(y) === norm(x));
+      if (i >= 0) e.emotions.splice(i, 1); else e.emotions.push(x);
+      b.setAttribute('aria-pressed', String(i < 0)); changed();
+    };
+    return b;
+  }));
+
+  const title = h('input', { class: 'e-title', type: 'text', maxlength: '120', placeholder: 'Главное за день — одной строкой',
+    enterkeyhint: 'next', 'aria-label': 'Главное за день', oninput: (ev) => { e.title = ev.target.value; changed(); } });
+  title.value = e.title;
+  const text = h('textarea', { class: 'e-text', 'aria-label': 'Текст записи',
+    placeholder: 'Что сегодня происходило? Теги можно ставить прямо в тексте: #отпуск' });
+  text.value = e.text;
+  const grow = () => { text.style.height = 'auto'; text.style.height = Math.max(220, text.scrollHeight + 2) + 'px'; };
+  text.addEventListener('input', () => { e.text = text.value; grow(); changed(); });
+
+  const media = h('div');
+  const refreshMedia = () => { media.replaceChildren(mediaBlock(e, true, refreshMedia) || ''); hydrateThumbs(media); };
+  const doAdd = async (files) => {
+    if (!files.length) return;
+    toast(files.length === 1 ? 'Добавляю файл…' : 'Добавляю ' + files.length + ' ' + plural(files.length, ['файл', 'файла', 'файлов']) + '…');
+    saved.textContent = 'Сохраняю фото и видео…';
+    await flushSaves();
+    const n = await addFiles(e, files, refreshMedia);
+    refreshMedia();
+    saved.textContent = 'Сохранено';
+    if (n) toast(n === 1 ? 'Добавлено' : 'Добавлено файлов: ' + n);
+  };
+  const fileInput = h('input', { type: 'file', accept: 'image/*,video/*', multiple: true, hidden: true,
+    onchange: (ev) => { const files = [...ev.target.files]; ev.target.value = ''; doAdd(files); } });
+  const recBox = h('div');
+  const micBtn = h('button', { class: 'btn', type: 'button' }, icon('mic'), 'Голос');
+  micBtn.onclick = async () => {
+    if (rec) return;
+    const r = await startRecording(async (blob, dur) => {
+      rec = null; recBox.replaceChildren(); micBtn.disabled = false;
+      if (blob.size < 500) return;
+      await flushSaves();
+      await storeMedia(e, { kind: 'audio', blob, mime: blob.type, duration: dur });
+      refreshMedia(); toast('Голосовая заметка сохранена');
+    });
+    if (!r) return;
+    rec = r; micBtn.disabled = true;
+    const timeEl = h('span', { class: 'grow', text: '0:00' });
+    const tick = setInterval(() => { if (!rec) { clearInterval(tick); return; } timeEl.textContent = fmtDur((Date.now() - r.started) / 1000); }, 500);
+    recBox.replaceChildren(h('div', { class: 'rec', style: 'margin-top:10px' }, h('span', { class: 'live' }), h('span', { text: 'Идёт запись' }), timeEl,
+      h('button', { class: 'btn primary', type: 'button', text: 'Стоп', onclick: () => r.stop() })));
+  };
+
+  const factors = h('div', { class: 'chips' }, settings.factors.map((f) => {
+    const b = h('button', { class: 'chip', type: 'button', text: f.name, 'aria-pressed': String(e.factors.includes(f.id)) });
+    b.onclick = () => {
+      const i = e.factors.indexOf(f.id);
+      if (i >= 0) e.factors.splice(i, 1); else e.factors.push(f.id);
+      b.setAttribute('aria-pressed', String(i < 0)); changed();
+    };
+    return b;
+  }));
+  const sv = h('button', { class: 'v', type: 'button', 'aria-label': 'Сон, часов. Коснитесь, чтобы очистить' });
+  const paintSleep = () => { sv.textContent = e.sleep == null ? '—' : fmtSleep(e.sleep); };
+  const step = (d) => { e.sleep = e.sleep == null ? 7 : Math.min(14, Math.max(0, e.sleep + d)); paintSleep(); changed(); };
+  sv.onclick = () => { e.sleep = e.sleep == null ? 7 : null; paintSleep(); changed(); };
+  paintSleep();
+
+  const bar = h('div', { class: 'sheet-bar' },
+    h('button', { class: 'btn primary', type: 'button', text: 'Готово', onclick: closeSheet }),
+    h('div', { class: 'title', text: 'Запись' }), starBtn(e), flagBtn(e));
+  const body = h('div', { class: 'sheet-body' },
+    h('label', { class: 'e-date' }, dateD, dateW, dateInput),
+    block('Настроение', row, capEl),
+    block('Эмоции', emo),
+    block(null, title),
+    block(null, text),
+    block('Фото, видео и голос', h('div', { class: 'row' },
+      h('button', { class: 'btn', type: 'button', onclick: () => fileInput.click() }, icon('image'), 'Фото или видео'), micBtn, fileInput), recBox, media),
+    block('Теги', tagEditor(e.tags, tagCounts, '#', 'Например: работа, отпуск', changed)),
+    block('С кем', tagEditor(e.people, peopleCounts, '', 'Имя', changed)),
+    block('Факторы дня', factors),
+    block('Сон', h('div', { class: 'row' }, h('div', { class: 'stepper' },
+      h('button', { class: 'btn icon ghost', type: 'button', 'aria-label': 'Меньше сна', text: '−', onclick: () => step(-0.5) }), sv,
+      h('button', { class: 'btn icon ghost', type: 'button', 'aria-label': 'Больше сна', text: '+', onclick: () => step(0.5) })))),
+    saved,
+    entries.has(e.id) ? h('div', { class: 'e-block', style: 'text-align:center' },
+      h('button', { class: 'btn ghost danger', type: 'button', onclick: () => confirmDelete(e) }, icon('trash'), 'Удалить запись')) : null);
+  s.panel.replaceChildren(bar, body);
+  s.panel.scrollTop = 0;
+  s.onClose = async () => {
+    if (rec) { rec.stop(); await new Promise((r) => setTimeout(r, 400)); }
+    await flushSaves();
+    if (entries.has(e.id) && isEmpty(e)) await deleteEntry(e);
+    return true;
+  };
+  refreshMedia();
+  requestAnimationFrame(grow);
+  return { addFiles: doAdd };
+}
+
+/* ================= Просмотр фото и видео ================= */
+let vItems = [], vIdx = 0;
+async function openViewer(items, idx) {
+  vItems = items; vIdx = idx;
+  const dlg = $('#viewer');
+  if (!dlg.open) dlg.showModal();
+  await showViewerItem();
+}
+async function showViewerItem() {
+  const wrap = $('#vwrap');
+  for (const v of wrap.querySelectorAll('video')) v.pause();
+  wrap.replaceChildren();
+  const it = vItems[vIdx];
+  $('#vcount').textContent = (vIdx + 1) + ' из ' + vItems.length;
+  $('#vprev').disabled = vIdx === 0; $('#vnext').disabled = vIdx === vItems.length - 1;
+  $('#vprev').hidden = $('#vnext').hidden = vItems.length < 2;
+  const u = await mediaURL(it.id);
+  if (vItems[vIdx] !== it) return;
+  if (!u) { wrap.append(h('p', { text: 'Файл не найден на этом устройстве' })); return; }
+  wrap.append(it.kind === 'video' ? h('video', { src: u, controls: true, playsinline: true, autoplay: true }) : h('img', { src: u, alt: '' }));
+}
+function viewerStep(d) { const n = vIdx + d; if (n >= 0 && n < vItems.length) { vIdx = n; showViewerItem(); } }
+function viewerCleanup() {
+  const wrap = $('#vwrap');
+  for (const v of wrap.querySelectorAll('video')) v.pause();
+  wrap.replaceChildren();
+  for (const it of vItems) revokeMedia(it.id, true);
+}
+
+/* ================= Блокировка ================= */
+function pinPad({ title, sub, onEnter, onCancel, forgot }) {
+  let code = '', busy = false;
+  const titleEl = h('h2', { text: title });
+  const msg = h('div', { class: 'msg', text: sub || '' });
+  const dots = h('div', { class: 'pins', 'aria-hidden': 'true' }, [0, 1, 2, 3].map(() => h('i')));
+  const paint = () => [...dots.children].forEach((d, i) => d.classList.toggle('on', i < code.length));
+  const el = h('div', { class: 'lock', role: 'dialog', 'aria-modal': 'true', 'aria-label': title });
+  const api = {
+    setTitle: (t) => { titleEl.textContent = t; },
+    setMsg: (t) => { msg.textContent = t; },
+    close: () => { el.remove(); document.removeEventListener('keydown', onKey); }
+  };
+  const press = async (k) => {
+    if (busy) return;
+    if (k === 'del') { code = code.slice(0, -1); paint(); return; }
+    if (code.length >= 4) return;
+    code += k; paint();
+    if (code.length < 4) return;
+    busy = true;
+    const r = await onEnter(code, api);
+    busy = false;
+    if (r === true) { api.close(); return; }
+    code = '';
+    if (r === 'keep') { paint(); return; }
+    dots.classList.remove('shake'); void dots.offsetWidth; dots.classList.add('shake');
+    setTimeout(paint, 250);
+  };
+  const onKey = (ev) => { if (/^\d$/.test(ev.key)) press(ev.key); else if (ev.key === 'Backspace') press('del'); };
+  const extra = onCancel ? h('button', { type: 'button', class: 'txt', text: 'Отмена', onclick: () => { api.close(); onCancel(); } })
+    : forgot ? h('button', { type: 'button', class: 'txt', text: 'Забыли?', onclick: forgot }) : h('span', { class: 'blank' });
+  const pad = h('div', { class: 'keypad' },
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((k) => h('button', { type: 'button', text: k, onclick: () => press(k) })),
+    extra, h('button', { type: 'button', text: '0', onclick: () => press('0') }),
+    h('button', { type: 'button', 'aria-label': 'Стереть', text: '⌫', onclick: () => press('del') }));
+  document.addEventListener('keydown', onKey);
+  el.append(icon('lock'), titleEl, msg, dots, pad);
+  document.body.append(el);
+  return api;
+}
+let pinFails = 0, pinBlockedUntil = 0;
+function lockApp() {
+  if (!settings.pinHash || locked) return;
+  locked = true;
+  hideVeil();
+  pinPad({ title: 'Дневник', sub: 'Введите код-пароль', forgot: forgotPin, onEnter: async (code, api) => {
+    if (Date.now() < pinBlockedUntil) { api.setMsg('Подождите ' + Math.ceil((pinBlockedUntil - Date.now()) / 1000) + ' с'); return 'keep'; }
+    if ((await hashPin(code, settings.pinSalt)) === settings.pinHash) { pinFails = 0; locked = false; return true; }
+    if (++pinFails >= 5) { pinFails = 0; pinBlockedUntil = Date.now() + 30000; api.setMsg('Слишком много попыток. Подождите 30 секунд'); }
+    else api.setMsg('Неверный код');
+    return false;
+  } });
+}
+async function forgotPin() {
+  if (!(await ask('Код-пароль нельзя восстановить. Сбросить его можно только вместе с удалением всех записей на этом устройстве. Продолжить?', 'Продолжить', true))) return;
+  if (!(await ask('Точно удалить все записи, фото и видео? Если у вас есть резервная копия, её можно будет загрузить заново.', 'Удалить всё', true))) return;
+  await wipeAll();
+}
+function setupPin(after) {
+  let first = null;
+  pinPad({ title: 'Новый код-пароль', sub: 'Придумайте 4 цифры', onCancel: () => after && after(), onEnter: async (code, api) => {
+    if (first == null) { first = code; api.setTitle('Повторите код'); api.setMsg('Введите те же 4 цифры'); return 'keep'; }
+    if (code !== first) { first = null; api.setTitle('Новый код-пароль'); api.setMsg('Коды не совпали. Придумайте код заново'); return false; }
+    settings.pinSalt = randomSalt();
+    settings.pinHash = await hashPin(code, settings.pinSalt);
+    await saveSettings();
+    toast('Код-пароль включён');
+    after && after();
+    return true;
+  } });
+}
+function verifyPin(title, then) {
+  pinPad({ title, sub: 'Введите текущий код', onCancel: () => {}, onEnter: async (code, api) => {
+    if ((await hashPin(code, settings.pinSalt)) !== settings.pinHash) { api.setMsg('Неверный код'); return false; }
+    then();
+    return true;
+  } });
+}
+let veil = null;
+function showVeil() { if (!veil) { veil = h('div', { class: 'veil' }); document.body.append(veil); } }
+function hideVeil() { if (veil) { veil.remove(); veil = null; } }
+
+/* ================= Настройки ================= */
+function openSettings() { renderSettings(openSheet()); }
+function renderSettings(s) {
+  const re = () => { if (sheet === s) renderSettings(s); };
+  const pinOn = !!settings.pinHash;
+  const group = (title, ...kids) => h('section', { class: 'set-group' }, h('h2', { text: title }), ...kids);
+  const rowEl = (label, note, control) => h('div', { class: 'set-row' }, h('div', { class: 'grow' }, label, note ? h('div', { class: 'note', text: note }) : null), control);
+  const selectEl = (value, opts, onchange, label) => h('select', { class: 'field', 'aria-label': label, onchange: (ev) => onchange(ev.target.value) },
+    opts.map(([v, l]) => h('option', { value: String(v), text: l, selected: String(v) === String(value) })));
+  const listEditor = (labels, onRemove, onAdd, placeholder) => {
+    const input = h('input', { class: 'field', placeholder, enterkeyhint: 'done', autocomplete: 'off', 'aria-label': placeholder });
+    const add = () => { const v = input.value.trim(); if (v) { onAdd(v); input.value = ''; } };
+    input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); add(); } });
+    return h('div', { class: 'stack', style: 'padding:12px 14px' },
+      h('div', { class: 'chips' }, labels.map((l, i) => h('button', { class: 'chip', type: 'button', 'aria-label': 'Убрать ' + l,
+        onclick: async () => { if (await ask('Убрать «' + l + '» из списка? В старых записях отметки сохранятся.', 'Убрать')) onRemove(i); } }, l, h('span', { class: 'x', text: '×' })))),
+      h('div', { class: 'row' }, h('div', { class: 'grow' }, input), h('button', { class: 'btn', type: 'button', text: 'Добавить', onclick: add })));
+  };
+  const importInput = h('input', { type: 'file', accept: '.zip,.json,application/zip,application/json', hidden: true,
+    onchange: (ev) => { const f = ev.target.files[0]; ev.target.value = ''; if (f) doImport(f, re); } });
+  const storageNote = h('div', { class: 'note', text: 'Считаю…' });
+  const counts = { photo: 0, video: 0, audio: 0 };
+  let n = 0;
+  for (const e of entries.values()) { if (!isEmpty(e)) n++; for (const m of e.media) counts[m.kind] = (counts[m.kind] || 0) + 1; }
+  if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then((x) => {
+    storageNote.textContent = 'Занято ' + fmtMB(x.usage || 0) + (x.quota ? ', доступно до ' + fmtMB(x.quota) : '');
+  }).catch(() => { storageNote.textContent = ''; }); else storageNote.textContent = '';
+
+  const bar = h('div', { class: 'sheet-bar' },
+    h('button', { class: 'btn ghost', type: 'button', onclick: closeSheet }, icon('left'), 'Назад'),
+    h('div', { class: 'title', text: 'Настройки' }), h('span', { style: 'width:88px' }));
+  const body = h('div', { class: 'sheet-body' },
+    group('Защита',
+      h('div', { class: 'set-list' },
+        rowEl('Код-пароль', pinOn ? 'Включён' : 'Выключен', h('button', { class: 'btn', type: 'button', text: pinOn ? 'Выключить' : 'Включить',
+          onclick: () => pinOn ? verifyPin('Выключить код', async () => { settings.pinHash = null; settings.pinSalt = null; await saveSettings(); toast('Код-пароль выключен'); re(); }) : setupPin(re) })),
+        pinOn ? rowEl('Сменить код', null, h('button', { class: 'btn', type: 'button', text: 'Сменить', onclick: () => verifyPin('Смена кода', () => setupPin(re)) })) : null,
+        pinOn ? rowEl('Блокировать после ухода в фон', null, selectEl(settings.autolock, [[0, 'Сразу'], [1, 'Через 1 мин'], [5, 'Через 5 мин'], [15, 'Через 15 мин']],
+          async (v) => { settings.autolock = +v; await saveSettings(); }, 'Автоблокировка')) : null),
+      h('p', { class: 'set-text', text: 'Код скрывает дневник от посторонних глаз, но не шифрует данные на устройстве. Забытый код сбрасывается только вместе с удалением записей — держите резервную копию.' })),
+    group('Дневник',
+      h('div', { class: 'set-list' },
+        rowEl('Новый день начинается в', 'Запись после полуночи относится к прошедшему дню', selectEl(settings.dayStart, [[0, '00:00'], [3, '03:00'], [4, '04:00'], [5, '05:00']],
+          async (v) => { settings.dayStart = +v; await saveSettings(); }, 'Начало дня')))),
+    group('Эмоции', h('div', { class: 'set-list' }, listEditor(settings.emotions,
+      async (i) => { settings.emotions.splice(i, 1); await saveSettings(); re(); },
+      async (v) => { if (!addUnique(settings.emotions, v)) return toast('Такая эмоция уже есть'); await saveSettings(); re(); }, 'Новая эмоция'))),
+    group('Факторы дня', h('div', { class: 'set-list' }, listEditor(settings.factors.map((f) => f.name),
+      async (i) => { settings.factors.splice(i, 1); await saveSettings(); re(); },
+      async (v) => { if (settings.factors.some((f) => norm(f.name) === norm(v))) return toast('Такой фактор уже есть'); settings.factors.push({ id: 'f_' + uid(), name: v }); await saveSettings(); re(); }, 'Новый фактор'))),
+    group('Ежедневное напоминание',
+      h('div', { class: 'set-text' },
+        h('p', { text: 'Веб-приложение не может само присылать уведомления по расписанию, поэтому напоминание ставится средствами iPhone и iPad:' }),
+        h('ol', null,
+          h('li', { text: '«Напоминания» → новое напоминание «Записать день» → включите дату и время → «Повтор: ежедневно».' }),
+          h('li', { text: 'Или «Команды» → «Автоматизация» → «+» → «Время суток», например 21:30, ежедневно, «Запускать сразу» → действие «Показать уведомление» с текстом «Как прошёл день?».' })),
+        h('p', { text: 'Не добавляйте в автоматизацию «Открыть URL»: ссылка откроется во вкладке Safari, где ваших записей нет. Открывайте дневник иконкой — на экране «Сегодня» вас ждёт воспоминание дня.' }))),
+    group('Копия и перенос',
+      h('div', { class: 'set-list' },
+        rowEl('Сохранить копию или перенести', 'Полная копия: ' + ago(meta.lastBackupAt), h('button', { class: 'btn primary', type: 'button', text: 'Сохранить', onclick: openExport })),
+        rowEl('Загрузить копию', 'Записи объединяются, ничего не затирается', h('button', { class: 'btn', type: 'button', text: 'Выбрать файл', onclick: () => importInput.click() })),
+        importInput),
+      h('p', { class: 'set-text', text: 'Перенос с iPhone на iPad: на iPhone — «Сохранить» → «Только изменения» → AirDrop или «Сохранить в Файлы». На iPad — «Загрузить копию». Повторная загрузка того же файла не создаёт дублей.' })),
+    group('Хранилище',
+      h('div', { class: 'set-list' },
+        h('div', { class: 'set-row' }, h('div', { class: 'grow' }, 'На этом устройстве', storageNote)),
+        h('div', { class: 'set-row' }, h('div', { class: 'grow' }, `Записей: ${n}, фото: ${counts.photo}, видео: ${counts.video}, голосовых: ${counts.audio}`)))),
+    PREVIEW ? null : group('Пример',
+      h('div', { class: 'set-list' }, DEMO
+        ? rowEl('Демо-режим включён', 'Примеры удалятся при выходе', h('button', { class: 'btn', type: 'button', text: 'Выйти из демо', onclick: exitDemo }))
+        : rowEl('Посмотреть на примере', 'Откроются примеры записей за три года. Ваш дневник не затрагивается', h('button', { class: 'btn', type: 'button', text: 'Открыть демо', onclick: enterDemo })))),
+    PREVIEW ? null : group('Удаление',
+      h('div', { class: 'set-list' }, rowEl('Удалить все данные', 'Записи, фото, видео и настройки на этом устройстве', h('button', { class: 'btn danger', type: 'button', text: 'Удалить',
+        onclick: async () => {
+          if (!(await ask('Удалить все записи, фото и видео на этом устройстве?', 'Продолжить', true))) return;
+          if (!(await ask('Это нельзя отменить. Резервная копия сохранена?', 'Удалить всё', true))) return;
+          await wipeAll();
+        } })))),
+    h('p', { class: 'set-text', style: 'text-align:center;margin-top:28px', text: 'Дневник, версия ' + APP_VERSION + (DEMO ? ', демо' : '') }));
+  s.onClose = null;
+  s.panel.replaceChildren(bar, body);
+}
+function enterDemo() { try { localStorage.setItem(APP_ID + ':demo', '1'); } catch (e) {} location.reload(); }
+const dropDB = (name) => new Promise((r) => { const q = indexedDB.deleteDatabase(name); q.onsuccess = q.onerror = q.onblocked = () => r(); });
+async function exitDemo() { try { localStorage.removeItem(APP_ID + ':demo'); } catch (e) {} if (db) db.close(); await dropDB('diary-demo'); location.reload(); }
+async function wipeAll() { if (db) db.close(); await dropDB(DB_NAME); location.reload(); }
+
+function openExport() {
+  const dlg = $('#dlg');
+  if (PREVIEW) {
+    dlg.onclose = null;
+    dlg.replaceChildren(h('h2', { text: 'Копия и перенос' }),
+      h('p', { text: 'В превью сохранять файлы нельзя. В установленном приложении здесь собирается архив с записями и медиа, который можно сохранить в «Файлы» или передать на iPad по AirDrop.' }),
+      h('div', { class: 'dlg-actions' }, h('button', { class: 'btn primary', type: 'button', text: 'Понятно', onclick: () => dlg.close() })));
+    dlg.showModal();
+    return;
+  }
+  let mode = 'full';
+  const defSince = meta.lastTransferAt ? ymd(new Date(meta.lastTransferAt)) : addDays(todayStr(), -30);
+  const sinceInput = h('input', { class: 'field', type: 'date', max: todayStr(), 'aria-label': 'Изменения с даты', disabled: true });
+  sinceInput.value = defSince;
+  const withMedia = h('input', { type: 'checkbox', checked: true, style: 'width:22px;height:22px' });
+  const radio = (v, l, note) => h('label', { class: 'row', style: 'align-items:flex-start;min-height:44px;flex-wrap:nowrap' },
+    h('input', { type: 'radio', name: 'xmode', value: v, checked: v === mode, style: 'width:22px;height:22px;margin-top:2px;flex:none',
+      onchange: () => { mode = v; sinceInput.disabled = mode !== 'since'; } }),
+    h('div', { class: 'grow' }, h('div', { text: l }), h('div', { class: 'small muted', text: note })));
+  const prog = h('div', { class: 'progress', hidden: true }, h('i'));
+  const status = h('p', { class: 'small muted', style: 'margin:0' });
+  const goBtn = h('button', { class: 'btn primary', type: 'button', text: 'Подготовить файл' });
+  goBtn.onclick = async () => {
+    goBtn.disabled = true; prog.hidden = false; status.textContent = 'Собираю архив…';
+    const since = mode === 'since' ? parseYmd(sinceInput.value || defSince).getTime() : 0;
+    let blob;
+    try { blob = await exportArchive({ since, withMedia: withMedia.checked }, (p) => { prog.firstChild.style.width = Math.round(p * 100) + '%'; }); }
+    catch (err) {
+      status.textContent = err.message === 'too-big' ? 'Архив больше 4 ГБ. Снимите галочку с медиа или выберите «Только изменения».' : 'Не удалось собрать архив.';
+      goBtn.disabled = false; return;
+    }
+    const name = 'diary-' + todayStr() + (since ? '-changes' : '') + '.zip';
+    status.textContent = 'Файл готов: ' + fmtMB(blob.size) + '. Нажмите «Сохранить файл» и выберите «Сохранить в Файлы» или AirDrop.';
+    goBtn.textContent = 'Сохранить файл'; goBtn.disabled = false;
+    goBtn.onclick = async () => {
+      if (!(await shareOrDownload(blob, name))) return;
+      meta.lastTransferAt = Date.now();
+      if (!since && withMedia.checked) meta.lastBackupAt = Date.now();
+      await saveMeta();
+      dlg.close(); toast('Копия сохранена');
+      if (sheet && sheet.panel.querySelector('.set-group')) renderSettings(sheet); else if (!sheet) renderView();
+    };
+  };
+  dlg.onclose = null;
+  dlg.replaceChildren(h('h2', { text: 'Копия и перенос' }),
+    h('div', { class: 'stack' },
+      radio('full', 'Полная копия', 'Все записи — для резервной копии или первого переноса'),
+      radio('since', 'Только изменения', 'Записи, изменённые с выбранной даты, — для регулярного переноса между устройствами'),
+      sinceInput,
+      h('label', { class: 'row', style: 'min-height:44px' }, withMedia, 'С фото, видео и голосом'),
+      prog, status),
+    h('div', { class: 'dlg-actions' }, h('button', { class: 'btn', type: 'button', text: 'Отмена', onclick: () => dlg.close() }), goBtn));
+  dlg.showModal();
+}
+async function doImport(file, after) {
+  toast('Загружаю копию…');
+  try {
+    const rep = await importFile(file);
+    const dlg = $('#dlg');
+    const line = (label, n) => n ? h('p', { style: 'margin:0', text: label + ': ' + n }) : null;
+    dlg.onclose = null;
+    dlg.replaceChildren(h('h2', { text: 'Копия загружена' }),
+      h('div', { class: 'stack' },
+        line('Новых записей', rep.added), line('Обновлено', rep.updated), line('Объединено по дате', rep.merged),
+        line('Фото, видео и голосовых', rep.media), line('Удалено', rep.removed),
+        !(rep.added || rep.updated || rep.merged || rep.media || rep.removed) ? h('p', { style: 'margin:0', text: 'Всё уже было на этом устройстве — ничего не изменилось.' }) : null),
+      h('div', { class: 'dlg-actions' }, h('button', { class: 'btn primary', type: 'button', text: 'Хорошо', onclick: () => dlg.close() })));
+    dlg.showModal();
+    after && after();
+    if (!sheet) renderView();
+  } catch (err) {
+    const m = err && err.message;
+    toast(m === 'not-diary' || m === 'not-zip' || m === 'bad-zip' ? 'Это не копия дневника'
+      : m === 'unsupported-zip' ? 'Архив пересжат — сохраните копию в дневнике заново' : 'Не удалось прочитать файл');
+  }
+}
+
+/* ================= Аналитика ================= */
+let statsYear = null;
+let statsWidth = 0;
+const SVGNS = 'http://www.w3.org/2000/svg';
+function S(tag, attrs, text) {
+  const el = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) if (v != null) el.setAttribute(k, v);
+  if (text != null) el.textContent = text;
+  return el;
+}
+const lastIdx = (vals) => { for (let i = vals.length - 1; i >= 0; i--) if (vals[i] != null) return i; return -1; };
+const wordsIn = (s) => (String(s || '').match(/[\p{L}\p{N}]+/gu) || []).length;
+function roundedBar(x, y, w, hh, r, end) {
+  if (hh <= 0) return '';
+  r = Math.min(r, hh, w / 2);
+  if (end === 'top') return `M${x},${y + hh}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + hh}Z`;
+  return `M${x},${y}V${y + hh - r}Q${x},${y + hh} ${x + r},${y + hh}H${x + w - r}Q${x + w},${y + hh} ${x + w},${y + hh - r}V${y}Z`;
+}
+function tipLayer(plot) {
+  const tip = h('div', { class: 'tip', hidden: true });
+  plot.append(tip);
+  let timer;
+  return {
+    show(x, y, lines, touch) {
+      tip.replaceChildren(...lines.map((l, i) => h('div', { style: i === 0 ? 'font-weight:600' : null, text: l })));
+      tip.hidden = false;
+      const pw = plot.clientWidth, tw = tip.offsetWidth;
+      tip.style.left = Math.min(Math.max(x, tw / 2 + 2), pw - tw / 2 - 2) + 'px';
+      tip.style.top = Math.max(y, tip.offsetHeight + 12) + 'px';
+      clearTimeout(timer);
+      if (touch) timer = setTimeout(() => { tip.hidden = true; }, 3500);
+    },
+    hide() { tip.hidden = true; }
+  };
+}
+
+function monthlyAvg(year) {
+  const sum = Array(12).fill(0), cnt = Array(12).fill(0);
+  for (const e of entries.values()) if (e.mood && e.date.startsWith(year)) { const m = +e.date.slice(5, 7) - 1; sum[m] += e.mood; cnt[m]++; }
+  return sum.map((s, i) => cnt[i] ? s / cnt[i] : null);
+}
+function lineChart(plot, W, series) {
+  const H = 240, ml = 30, mr = 44, mt = 16, mb = 26;
+  const iw = Math.max(120, W - ml - mr), ih = H - mt - mb;
+  const all = series.flatMap((s) => s.values).filter((v) => v != null);
+  let lo = Math.max(1, Math.floor(Math.min(4, ...all) - 0.3)), hi = Math.min(7, Math.ceil(Math.max(4, ...all) + 0.3));
+  if (hi - lo < 2) { if (hi < 7) hi++; else lo--; }
+  const x = (i) => ml + (i + 0.5) * iw / 12, y = (v) => mt + (hi - v) / (hi - lo) * ih;
+  const svg = S('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': 'Среднее настроение по месяцам' });
+  for (let v = lo; v <= hi; v++) {
+    svg.append(S('line', { x1: ml, x2: ml + iw, y1: y(v), y2: y(v), class: v === 4 ? 'axis' : 'grid', 'stroke-dasharray': v === 4 ? '4 4' : null }));
+    svg.append(S('text', { x: ml - 6, y: y(v) + 5, 'text-anchor': 'end', style: 'font-size:14px' }, MOODS[v].e));
+  }
+  const narrow = iw < 420;
+  for (let i = 0; i < 12; i++) svg.append(S('text', { x: x(i), y: H - 6, 'text-anchor': 'middle' }, narrow ? MONTHS[i][0] : MONTHS_S[i]));
+  const pathD = (vals) => { let d = '', pen = false; vals.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); pen = true; }); return d; };
+  const strong = series.find((s) => s.strong), others = series.filter((s) => !s.strong);
+  const labels = [];
+  for (const s of others) {
+    svg.append(S('path', { d: pathD(s.values), fill: 'none', 'stroke-width': 1.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', style: 'stroke: var(--muted); stroke-opacity: .45' }));
+    const li = lastIdx(s.values);
+    if (li >= 0 && others.length <= 2) labels.push({ x: x(li) + 8, y: y(s.values[li]) + 4, t: s.label });
+  }
+  if (strong) {
+    svg.append(S('path', { d: pathD(strong.values), fill: 'none', 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', style: 'stroke: var(--ink)' }));
+    strong.values.forEach((v, i) => { if (v != null) svg.append(S('circle', { cx: x(i), cy: y(v), r: 5, style: `fill: var(--m${Math.round(v)}); stroke: var(--surface); stroke-width: 2` })); });
+    const li = lastIdx(strong.values);
+    if (li >= 0) labels.push({ x: x(li) + 10, y: y(strong.values[li]) + 4, t: strong.label, strong: true });
+  }
+  labels.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 13) labels[i].y = labels[i - 1].y + 13;
+  for (const l of labels) svg.append(S('text', { x: l.x, y: l.y, class: l.strong ? 'lbl' : null, style: l.strong ? 'font-weight:600' : null }, l.t));
+  const cross = S('line', { y1: mt, y2: mt + ih, class: 'axis', visibility: 'hidden' });
+  const hit = S('rect', { x: ml, y: mt, width: iw, height: ih, fill: 'transparent', style: 'touch-action: pan-y' });
+  svg.append(cross, hit);
+  plot.append(svg);
+  const tip = tipLayer(plot);
+  const onMove = (ev) => {
+    const r = svg.getBoundingClientRect(), k = r.width / W;
+    const i = Math.max(0, Math.min(11, Math.floor(((ev.clientX - r.left) / k - ml) / (iw / 12))));
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+    const lines = [MONTHS[i]];
+    let top = mt + ih;
+    for (const s of [strong, ...others].filter(Boolean)) {
+      const v = s.values[i];
+      if (v != null) { lines.push(s.label + ': ' + fmt1(v) + ' ' + MOODS[Math.round(v)].e); top = Math.min(top, y(v)); }
+    }
+    if (lines.length === 1) lines.push('нет оценок');
+    tip.show(x(i) * k, top * k, lines, ev.pointerType !== 'mouse');
+  };
+  hit.addEventListener('pointermove', onMove);
+  hit.addEventListener('pointerdown', onMove);
+  hit.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse') { cross.setAttribute('visibility', 'hidden'); tip.hide(); } });
+  if (strong && others.length) plot.append(h('div', { class: 'ckey' },
+    h('span', null, h('i', { style: 'background: var(--ink)' }), strong.label),
+    h('span', null, h('i', { style: 'background: var(--muted); opacity: .5' }), others.length <= 2 ? others.map((o) => o.label).join(' и ') : 'другие годы: ' + others.map((o) => o.label).join(', '))));
+}
+function barChart(plot, W, { labels, values, colors, title, emoji = false, fmtV = (v) => String(v), tipOf }) {
+  const H = 180, ml = 6, mr = 6, mt = 20, mb = 28;
+  const iw = W - ml - mr, ih = H - mt - mb, n = values.length, step = iw / n;
+  const bw = Math.min(54, step * 0.62), max = Math.max(1, ...values);
+  const svg = S('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': title });
+  svg.append(S('line', { x1: ml, x2: ml + iw, y1: mt + ih, y2: mt + ih, class: 'axis' }));
+  values.forEach((v, i) => {
+    const cx = ml + step * (i + 0.5), bh = v ? Math.max(2, v / max * ih) : 0;
+    if (v) {
+      const p = S('path', { d: roundedBar(cx - bw / 2, mt + ih - bh, bw, bh, 4, 'top'), style: `fill: ${colors[i % colors.length]}` });
+      p.append(S('title', null, tipOf ? tipOf(i) : labels[i] + ': ' + fmtV(v)));
+      svg.append(p);
+      svg.append(S('text', { x: cx, y: mt + ih - bh - 6, 'text-anchor': 'middle', class: 'lbl' }, fmtV(v)));
+    }
+    svg.append(S('text', { x: cx, y: H - 7, 'text-anchor': 'middle', style: emoji ? 'font-size:17px' : null }, labels[i]));
+  });
+  plot.append(svg);
+}
+function devChart(plot, W, { labels, values, counts, title }) {
+  const H = 196, ml = 30, mr = 6, mt = 22, mb = 28;
+  const iw = W - ml - mr, ih = H - mt - mb, n = values.length, step = iw / n;
+  const vals = values.filter((v) => v != null);
+  const lo = Math.max(1, Math.min(3.5, Math.floor((Math.min(4, ...vals) - 0.3) * 2) / 2));
+  const hi = Math.min(7, Math.max(4.5, Math.ceil((Math.max(4, ...vals) + 0.3) * 2) / 2));
+  const y = (v) => mt + (hi - v) / (hi - lo) * ih;
+  const svg = S('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': title });
+  for (let v = Math.ceil(lo); v <= Math.floor(hi); v++) {
+    svg.append(S('line', { x1: ml, x2: ml + iw, y1: y(v), y2: y(v), class: v === 4 ? 'axis' : 'grid' }));
+    svg.append(S('text', { x: ml - 6, y: y(v) + 5, 'text-anchor': 'end', style: 'font-size:13px' }, MOODS[v].e));
+  }
+  const bw = Math.min(46, step * 0.6), base = y(4);
+  values.forEach((v, i) => {
+    const cx = ml + step * (i + 0.5);
+    svg.append(S('text', { x: cx, y: H - 7, 'text-anchor': 'middle' }, labels[i]));
+    if (v == null) { svg.append(S('text', { x: cx, y: base - 6, 'text-anchor': 'middle' }, '—')); return; }
+    const up = v >= 4, top = Math.min(y(v), base), bh = Math.max(1.5, Math.abs(y(v) - base));
+    const p = S('path', { d: roundedBar(cx - bw / 2, up ? base - bh : base, bw, bh, 4, up ? 'top' : 'bottom'), style: `fill: var(${up ? '--m6' : '--m2'})` });
+    p.append(S('title', null, labels[i] + ': ' + fmt1(v) + ', ' + nDays(counts[i])));
+    svg.append(p);
+    svg.append(S('text', { x: cx, y: up ? top - 6 : base + bh + 14, 'text-anchor': 'middle', class: 'lbl' }, fmt1(v)));
+  });
+  plot.append(svg);
+}
+function influence(list, keysOf) {
+  const all = list.filter((e) => e.mood);
+  const tot = all.reduce((s, e) => s + e.mood, 0), N = all.length;
+  const map = new Map();
+  for (const e of all) {
+    const seen = new Set();
+    for (const [k, label] of keysOf(e)) {
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const r = map.get(k) || { label, sum: 0, n: 0 };
+      r.sum += e.mood; r.n++; map.set(k, r);
+    }
+  }
+  const out = [];
+  for (const r of map.values()) {
+    if (r.n < 3 || N - r.n < 3) continue;
+    const a = r.sum / r.n, b = (tot - r.sum) / (N - r.n);
+    out.push({ label: r.label, delta: a - b, n: r.n, avg: a });
+  }
+  return out.sort((a, b) => b.delta - a.delta);
+}
+const topByEffect = (items, k = 10) => [...items].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, k).sort((a, b) => b.delta - a.delta);
+function divRows(items) {
+  const max = Math.max(0.5, ...items.map((i) => Math.abs(i.delta)));
+  return h('div', { class: 'drows' }, items.map((i) => h('div', { class: 'drow', title: i.label + ': в среднем ' + fmt1(i.avg) + ', ' + nDays(i.n) },
+    h('div', { class: 'dl', text: i.label }),
+    h('div', { class: 'dbar' }, h('i', { class: i.delta >= 0 ? 'pos' : 'neg', style: `width:${(Math.abs(i.delta) / max * 50).toFixed(1)}%` })),
+    h('div', { class: 'dv' }, (i.delta >= 0 ? '+' : '−') + fmt1(Math.abs(i.delta)), h('small', { text: nDays(i.n) })))));
+}
+function freqRows(items) {
+  const max = Math.max(1, ...items.map((i) => i.n));
+  return h('div', { class: 'drows' }, items.map((i) => h('div', { class: 'drow freq' },
+    h('div', { class: 'dl', text: i.label }),
+    h('div', { class: 'dbar' }, h('i', { style: `width:${(i.n / max * 100).toFixed(1)}%` })),
+    h('div', { class: 'dv', text: String(i.n) }))));
+}
+function countTop(list, pick, k = 8) {
+  const m = new Map();
+  for (const e of list) for (const v of pick(e)) { const key = norm(v); const r = m.get(key) || { label: v, n: 0 }; r.n++; m.set(key, r); }
+  return [...m.values()].sort((a, b) => b.n - a.n).slice(0, k);
+}
+
+function renderStats(v) {
+  const all = sorted.filter((e) => !isEmpty(e));
+  v.append(head('Аналитика'), ...sysBanners());
+  if (all.filter((e) => e.mood).length < 3) {
+    v.append(h('div', { class: 'empty' }, h('h2', { text: 'Пока мало данных' }),
+      h('p', { text: 'Графики появятся, когда наберётся хотя бы три дня с оценкой настроения. Хотите посмотреть, как это будет выглядеть?' }),
+      DEMO ? null : h('button', { class: 'btn primary', type: 'button', text: 'Открыть демо', onclick: enterDemo })));
+    return;
+  }
+  const t = todayStr(), cy = +t.slice(0, 4);
+  const ys = yearsList();
+  const moodCount = (y) => all.filter((e) => e.mood && e.date.startsWith(String(y))).length;
+  if (statsYear == null || (statsYear !== 'all' && !ys.includes(+statsYear))) statsYear = String(moodCount(cy) >= 5 ? cy : (ys.find((y) => moodCount(y) >= 5) || cy));
+  const Y = statsYear;
+  v.append(h('div', { class: 'yearchips', role: 'group', 'aria-label': 'Период' },
+    ys.map((y) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(String(y) === Y), text: String(y), onclick: () => { statsYear = String(y); renderView(); } })),
+    h('button', { class: 'chip', type: 'button', 'aria-pressed': String(Y === 'all'), text: 'Все годы', onclick: () => { statsYear = 'all'; renderView(); } })));
+
+  const list = Y === 'all' ? all : all.filter((e) => e.date.startsWith(Y));
+  const ml = list.filter((e) => e.mood);
+  const asc = [...list].map((e) => e.date).sort();
+  const yr = +Y;
+  const period = Y === 'all' ? daysBetween(asc[0] || t, t) + 1
+    : yr === cy ? daysBetween(cy + '-01-01', t) + 1 : (new Date(yr, 1, 29).getMonth() === 1 ? 366 : 365);
+  const pct = Math.min(100, Math.round(list.length / Math.max(1, period) * 100));
+  const avg = avgOf(ml.map((e) => e.mood));
+  const vis = list.reduce((s, e) => s + e.media.filter((m) => m.kind !== 'audio').length, 0);
+  const voice = list.reduce((s, e) => s + e.media.filter((m) => m.kind === 'audio').length, 0);
+  const words = list.reduce((s, e) => s + wordsIn(e.text) + wordsIn(e.title), 0);
+  const kpi = (val, label, small) => h('div', { class: 'kpi' }, h('div', { class: 'v' }, String(val), small ? h('small', { text: small }) : null), h('div', { class: 'k', text: label }));
+  v.append(h('div', { class: 'kpis' },
+    kpi(list.length, plural(list.length, ['запись', 'записи', 'записей']) + ', это ' + pct + '% дней'),
+    kpi(fmt1(avg), 'среднее настроение', avg ? MOODS[Math.round(avg)].e : null),
+    kpi(longestStreak(asc), 'дней подряд — рекорд'),
+    (Y === 'all' || yr === cy) ? kpi(streakInfo().n, 'текущая серия') : null,
+    kpi(vis, 'фото и видео', voice ? '+ ' + voice + ' голос.' : null),
+    kpi(words.toLocaleString('ru-RU'), plural(words, ['слово', 'слова', 'слов']))));
+
+  const charts = h('div', { class: 'charts' });
+  const later = [];
+  const add = (title, sub, draw, cls = '') => {
+    const plot = h('div', { class: 'plot' });
+    charts.append(h('section', { class: 'chart ' + cls }, h('h2', { text: title }), sub ? h('p', { class: 'sub', text: sub }) : null, plot));
+    later.push(() => draw(plot, plot.clientWidth));
+  };
+  const addNode = (title, sub, node, cls = '') => charts.append(h('section', { class: 'chart ' + cls }, h('h2', { text: title }), sub ? h('p', { class: 'sub', text: sub }) : null, node));
+
+  // 1. Месяцы и сравнение лет
+  const withData = ys.filter((y) => moodCount(y) > 0);
+  const strongY = Y === 'all' ? withData[0] : yr;
+  const others = withData.filter((y) => y !== strongY).slice(0, Y === 'all' ? 6 : 4);
+  const series = [{ label: String(strongY), values: monthlyAvg(String(strongY)), strong: true }, ...others.map((y) => ({ label: String(y), values: monthlyAvg(String(y)) }))];
+  add(Y === 'all' ? 'Настроение по месяцам, все годы' : 'Настроение по месяцам',
+    others.length ? 'Среднее за месяц. Тонкие линии — другие годы для сравнения. Коснитесь графика, чтобы увидеть значения.' : 'Среднее за месяц. Коснитесь графика, чтобы увидеть значения.',
+    (p, w) => lineChart(p, w, series), 'full');
+
+  if (Y === 'all' && withData.length > 1) {
+    const yAsc = [...withData].sort();
+    add('Настроение по годам', 'Среднее за год; выше линии 😐 — лучше нейтрального', (p, w) => devChart(p, w, {
+      title: 'Настроение по годам', labels: yAsc.map(String),
+      values: yAsc.map((y) => avgOf(all.filter((e) => e.mood && e.date.startsWith(String(y))).map((e) => e.mood))),
+      counts: yAsc.map((y) => moodCount(y)) }));
+    add('Записей по годам', null, (p, w) => barChart(p, w, {
+      title: 'Записей по годам', labels: yAsc.map(String), colors: ['var(--ink)'],
+      values: yAsc.map((y) => all.filter((e) => e.date.startsWith(String(y))).length) }));
+  }
+
+  // 2. Распределение оценок
+  const dist = [1, 2, 3, 4, 5, 6, 7].map((m) => ml.filter((e) => e.mood === m).length);
+  add('Как распределились оценки', 'Сколько дней с каждой оценкой', (p, w) => barChart(p, w, {
+    title: 'Распределение оценок', labels: [1, 2, 3, 4, 5, 6, 7].map((m) => MOODS[m].e), emoji: true,
+    colors: [1, 2, 3, 4, 5, 6, 7].map((m) => `var(--m${m})`), values: dist, tipOf: (i) => MOODS[i + 1].t + ': ' + nDays(dist[i]) }));
+
+  // 3. Дни недели
+  const wd = Array.from({ length: 7 }, () => []);
+  for (const e of ml) wd[(parseYmd(e.date).getDay() + 6) % 7].push(e.mood);
+  add('Дни недели', 'Среднее настроение; выше линии 😐 — лучше нейтрального', (p, w) => devChart(p, w, {
+    title: 'Настроение по дням недели', labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], values: wd.map(avgOf), counts: wd.map((a) => a.length) }));
+
+  // 4. Влияние
+  const effSub = 'На сколько среднее настроение в такие дни выше (+) или ниже (−), чем в остальные. Учитывается, если отмечено хотя бы в 3 днях.';
+  const fx = influence(list, (e) => e.factors.map((f) => [f, factorName(f)]));
+  addNode('Что влияет на настроение', effSub, fx.length ? divRows(fx) : h('p', { class: 'muted small', text: 'Отмечайте факторы дня в записях — здесь появится их влияние.' }));
+  const tg = topByEffect(influence(list, (e) => e.tags.map((x) => [norm(x), '#' + x])));
+  if (tg.length) addNode('Теги и настроение', 'Самые заметные связи, плюс и минус', divRows(tg));
+  const pp = topByEffect(influence(list, (e) => e.people.map((x) => [norm(x), x])));
+  if (pp.length) addNode('Люди и настроение', 'В дни, когда вы отмечали этих людей', divRows(pp));
+
+  // 5. Сон
+  const sl = [[], [], [], []];
+  for (const e of ml) if (e.sleep != null) sl[e.sleep < 6 ? 0 : e.sleep < 7 ? 1 : e.sleep < 8 ? 2 : 3].push(e.mood);
+  if (sl.some((a) => a.length >= 3)) add('Сон и настроение', 'Среднее настроение в зависимости от сна накануне', (p, w) => devChart(p, w, {
+    title: 'Сон и настроение', labels: ['< 6 ч', '6–7 ч', '7–8 ч', '8+ ч'], values: sl.map((a) => a.length ? avgOf(a) : null), counts: sl.map((a) => a.length) }));
+
+  // 6. Эмоции
+  const em = countTop(list, (e) => e.emotions, 10);
+  if (em.length) addNode('Эмоции', 'Сколько дней отмечена каждая эмоция', freqRows(em));
+
+  // 7. Итоги года
+  if (Y !== 'all') charts.append(yearSummary(list, Y));
+
+  v.append(charts);
+  requestAnimationFrame(() => { statsWidth = v.clientWidth; for (const f of later) f(); });
+}
+function yearSummary(list, Y) {
+  const wm = list.filter((e) => e.mood);
+  const weight = (e) => e.text.length + e.title.length * 3 + e.media.length * 200;
+  const best = wm.filter((e) => e.mood >= 5).sort((a, b) => b.mood - a.mood || weight(b) - weight(a)).slice(0, 5);
+  const hard = wm.filter((e) => e.mood <= 3).sort((a, b) => a.mood - b.mood || weight(b) - weight(a)).slice(0, 5);
+  const ms = list.filter((e) => e.milestone).sort((a, b) => a.date.localeCompare(b.date));
+  const rank = (arr, empty) => arr.length ? h('div', { class: 'rank' }, arr.map((e) => h('button', { type: 'button', onclick: () => openEntry(e.id) },
+    h('span', { class: 'e', text: e.mood ? MOODS[e.mood].e : '•' }),
+    h('span', { style: 'min-width:0' }, h('div', { class: 'tx', text: e.title || firstSentence(e.text, 90) || (e.mood ? MOODS[e.mood].t : 'Без текста') }), h('div', { class: 'd', text: fmtDate(e.date, false) })),
+    h('span')))) : h('p', { class: 'muted small', text: empty });
+  const tops = (label, items, prefix = '') => items.length ? h('div', null, h('div', { class: 'h3', text: label }),
+    h('div', { class: 'tops' }, items.map((i) => h('span', { class: 'chip static', text: prefix + i.label + ' ' + i.n })))) : null;
+  return h('section', { class: 'chart full' }, h('h2', { text: 'Итоги ' + Y + ' года' }),
+    h('p', { class: 'sub', text: 'Коснитесь дня, чтобы открыть запись' }),
+    h('div', { class: 'twocol' },
+      h('div', null, h('div', { class: 'h3', text: 'Лучшие дни' }), rank(best, 'Дней с оценкой 5–7 пока нет')),
+      h('div', null, h('div', { class: 'h3', text: 'Трудные дни' }), rank(hard, 'Трудных дней не было'))),
+    ms.length ? h('div', null, h('div', { class: 'h3', text: 'Вехи года' }), rank(ms, '')) : null,
+    h('div', { class: 'twocol' },
+      tops('Чаще всего в тегах', countTop(list, (e) => e.tags), '#'),
+      tops('Чаще всего рядом', countTop(list, (e) => e.people)),
+      tops('Чаще всего чувствовали', countTop(list, (e) => e.emotions))));
+}
+
+/* ================= Демо-данные (только в базе diary-demo) ================= */
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+async function synthPhoto(rnd, date, mood) {
+  const W = 960, H = 720;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const m = +date.slice(5, 7);
+  const season = m === 12 || m <= 2 ? 0 : m <= 5 ? 1 : m <= 8 ? 2 : 3;
+  const sky = g.createLinearGradient(0, 0, 0, H * 0.7);
+  sky.addColorStop(0, mood >= 5 ? ['#6f9fd8', '#5e98de', '#4a8fe0', '#7a9cc8'][season] : '#8c97ad');
+  sky.addColorStop(1, mood >= 6 ? '#f7d9a0' : mood >= 4 ? '#d8e6f3' : '#c0c6d2');
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  if (mood >= 5) { g.fillStyle = 'rgba(255,246,214,.9)'; g.beginPath(); g.arc(150 + rnd() * 660, 120 + rnd() * 120, 48 + rnd() * 20, 0, 7); g.fill(); }
+  const pal = [['#eef2f7', '#d7dfea', '#b9c5d6'], ['#a9cf82', '#82b263', '#5f8e4b'], ['#7fb069', '#5a8f4e', '#3d6b3a'], ['#d29a52', '#ad6a33', '#70482b']][season];
+  for (let L = 0; L < 3; L++) {
+    const base = H * (0.52 + L * 0.13), amp = 30 + rnd() * 40, f = 1.5 + rnd() * 2, ph = rnd() * 6;
+    g.fillStyle = pal[L];
+    g.beginPath(); g.moveTo(0, H);
+    for (let x = 0; x <= W; x += 24) g.lineTo(x, base - Math.sin(x / W * Math.PI * f + ph) * amp - rnd() * 8);
+    g.lineTo(W, H); g.closePath(); g.fill();
+  }
+  const full = await canvasBlob(c, 0.8);
+  const th = await drawScaled(c, W, H, 480, 0.78);
+  return { blob: full, thumb: th.blob, width: W, height: H };
+}
+async function generateDemo(onProgress) {
+  const rnd = mulberry32(20261014);
+  const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+  const chance = (p) => rnd() < p;
+  const today = todayStr();
+  const start = addDays(today, -365 * 3 + 40);
+  const POS = ['Утром долго гуляли по парку, листья шуршат под ногами.', 'Закрыли этап проекта — команда молодцы.', 'Вечером смотрели кино и смеялись до слёз.', 'Съездили на дачу, пожарили шашлык.', 'Получил хорошие новости по работе.', 'Читал новую книгу и не мог оторваться.', 'Наконец-то выспался, весь день бодрость.', 'Приготовил ужин по новому рецепту — получилось отлично.', 'Долгий разговор с близким другом, стало легко.'];
+  const MID = ['Обычный рабочий день, много встреч.', 'Разбирал почту и документы.', 'Немного прибрался дома.', 'Съездил в магазин, приготовил ужин.', 'День прошёл ровно, без сюрпризов.', 'Работал из дома, вечером сериал.'];
+  const NEG = ['Не выспался, весь день как в тумане.', 'Сорвался срок, пришлось задержаться.', 'Болела голова, рано лёг.', 'Пробки, опоздал на совещание.', 'Поругались по мелочи, неприятный осадок.', 'Навалилось сразу всё, ничего не успел.'];
+  const FX = { sport: 'Утром пробежал пять километров.', walk: 'Прошёл пешком через весь район.', overwork: 'Засиделся на работе допоздна.', friends: 'Вечером встретились с друзьями.', family: 'Позвонил родителям, долго говорили.', trip: 'Выбрались за город.', sick: 'Температура, весь день под пледом.' };
+  const TITLES = ['Первый снег', 'Поездка в Суздаль', 'День рождения мамы', 'Сдали проект', 'Начало отпуска', 'Концерт любимой группы', 'Прогулка по Коломенскому', 'Тихий вечер с книгой'];
+  const MILESTONES = [[80, 'Начал новый проект'], [210, 'Отпуск на Алтае'], [330, 'Купил велосипед'], [470, 'Переезд в новую квартиру'], [600, 'Первый полумарафон'], [720, 'Свадьба друзей'], [830, 'Закончил курс английского'], [960, 'Новая должность'], [1030, 'Поездка в Калининград']];
+  const PEOPLE = ['Аня', 'Мама', 'Папа', 'Сергей', 'Коллеги', 'Миша'];
+  const out = [], photos = [];
+  let d = start, idx = 0;
+  while (d < today) {
+    const date = parseYmd(d), dow = date.getDay(), weekend = dow === 0 || dow === 6;
+    const doy = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 864e5);
+    const ms = MILESTONES.find(([k]) => k === idx);
+    const sameDay = d.slice(5) === today.slice(5);
+    if (chance(0.8) || ms || sameDay) {
+      const f = [];
+      if (chance(0.3)) f.push('sport');
+      if (chance(0.35)) f.push('walk');
+      if (!weekend && chance(0.22)) f.push('overwork');
+      if (weekend && chance(0.9)) f.push('dayoff');
+      if (chance(weekend ? 0.3 : 0.1)) f.push('friends');
+      if (chance(0.25)) f.push('family');
+      if (chance(0.04) || (ms && chance(0.5))) f.push('trip');
+      if (chance(0.05)) f.push('sick');
+      if (weekend && chance(0.12)) f.push('alcohol');
+      if (chance(0.3)) f.push('screen');
+      const sleep = Math.round(Math.max(4.5, Math.min(10, 7 + (rnd() + rnd() + rnd() - 1.5) * 1.6 + (weekend ? 0.6 : 0) - (f.includes('screen') ? 0.6 : 0))) * 2) / 2;
+      let x = 4.4 + 0.55 * Math.sin((doy - 100) / 365 * Math.PI * 2) + (rnd() + rnd() + rnd() - 1.5) * 1.5 + (sleep - 7) * 0.35;
+      const eff = { sport: 0.5, walk: 0.3, overwork: -0.8, dayoff: 0.4, friends: 0.7, family: 0.3, trip: 0.9, sick: -1.7, alcohol: -0.2, screen: -0.3 };
+      for (const k of f) x += eff[k];
+      if (ms) x += 1.5;
+      const mood = Math.max(1, Math.min(7, Math.round(x)));
+      const tags = [];
+      if (!weekend && chance(0.5)) tags.push('работа');
+      if (chance(0.15)) tags.push('проект');
+      if (weekend && date.getMonth() >= 4 && date.getMonth() <= 8 && chance(0.4)) tags.push('дача');
+      if (f.includes('sport') && chance(0.6)) tags.push('спорт');
+      if (chance(0.12)) tags.push('книги');
+      if (chance(0.08)) tags.push('кино');
+      if (chance(0.05)) tags.push('ремонт');
+      const people = [];
+      if (chance(0.3)) people.push('Аня');
+      if (!weekend && chance(0.25)) people.push('Коллеги');
+      if (chance(0.12)) people.push(pick(PEOPLE));
+      const emoPool = mood >= 6 ? ['Радость', 'Благодарность', 'Вдохновение', 'Любовь', 'Гордость', 'Интерес'] : mood >= 4 ? ['Спокойствие', 'Интерес', 'Усталость', 'Благодарность'] : ['Усталость', 'Тревога', 'Грусть', 'Раздражение', 'Стресс', 'Злость', 'Одиночество'];
+      const emotions = [];
+      for (let k = 0, n = 1 + Math.floor(rnd() * 2); k < n; k++) addUnique(emotions, pick(emoPool));
+      const parts = [pick(mood >= 5 ? POS : mood >= 4 ? MID : NEG)];
+      for (const k of f) if (FX[k] && chance(0.5)) parts.push(FX[k]);
+      if (chance(0.4)) parts.push(pick(mood >= 5 ? POS : MID));
+      const e = blankEntry(d);
+      Object.assign(e, { mood, emotions, tags: [...new Set(tags)], people: [...new Set(people)], factors: f, sleep: chance(0.85) ? sleep : null,
+        text: [...new Set(parts)].join(' '), title: ms ? ms[1] : (mood >= 6 && chance(0.35) ? pick(TITLES) : ''),
+        milestone: !!ms, favorite: !!ms || (mood >= 6 && chance(0.06)),
+        createdAt: date.getTime() + 20 * 3600e3, updatedAt: date.getTime() + 20 * 3600e3 });
+      out.push(e);
+      if (ms || sameDay || (mood >= 5 && chance(0.06)) || chance(0.015)) photos.push(e);
+    }
+    d = addDays(d, 1); idx++;
+  }
+  await idb.putMany('entries', out);
+  let i = 0;
+  for (const e of photos) {
+    const n = 1 + (e.milestone ? 2 : chance(0.3) ? 1 : 0);
+    for (let k = 0; k < n; k++) {
+      const p = await synthPhoto(rnd, e.date, e.mood);
+      const id = uid();
+      await idbTx(['media', 'thumbs'], 'readwrite', (t) => {
+        t.objectStore('media').put({ id, entryId: e.id, kind: 'photo', mime: 'image/jpeg', blob: p.blob, width: p.width, height: p.height, duration: 0, size: p.blob.size, createdAt: e.createdAt });
+        t.objectStore('thumbs').put({ id, blob: p.thumb });
+      });
+      e.media.push({ id, kind: 'photo', duration: 0 });
+    }
+    onProgress && onProgress(++i / photos.length);
+  }
+  await idb.putMany('entries', photos);
+  meta.lastBackupAt = Date.now();
+  await saveMeta();
+  for (const e of out) { entries.set(e.id, e); byDate.set(e.date, e); }
+  rebuildIndex();
+}
+
+/* ================= Запуск ================= */
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    hiddenAt = Date.now();
+    flushSaves();
+    if (settings.pinHash && !locked) showVeil();
+  } else {
+    if (settings.pinHash && !locked && Date.now() - hiddenAt >= (Number(settings.autolock) || 0) * 60000) lockApp();
+    hideVeil();
+    if (!sheet && tab === 'today' && !document.querySelector('dialog[open]')) renderView(); // новый день — новые воспоминания
+  }
+});
+window.addEventListener('pagehide', () => { flushSaves(); });
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && sheet && !document.querySelector('dialog[open]') && !document.querySelector('.lock')) closeSheet();
+});
+window.addEventListener('resize', debounce(() => {
+  if (tab === 'stats' && !sheet && Math.abs($('#view').clientWidth - statsWidth) > 24) renderView();
+}, 200));
+
+$('#vclose').onclick = () => $('#viewer').close();
+$('#vprev').onclick = () => viewerStep(-1);
+$('#vnext').onclick = () => viewerStep(1);
+$('#viewer').addEventListener('close', viewerCleanup);
+(() => {
+  let sx = null;
+  const v = $('#viewer');
+  v.addEventListener('touchstart', (ev) => { sx = ev.touches.length === 1 ? ev.touches[0].clientX : null; }, { passive: true });
+  v.addEventListener('touchend', (ev) => {
+    if (sx == null) return;
+    const dx = ev.changedTouches[0].clientX - sx; sx = null;
+    if (Math.abs(dx) > 60) viewerStep(dx < 0 ? 1 : -1);
+  });
+})();
+
+function registerSW() {
+  if (PREVIEW || !('serviceWorker' in navigator) || !(location.protocol === 'https:' || location.hostname === 'localhost')) return;
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    const offer = (w) => { updateWorker = w; if (!sheet) renderView(); };
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      if (w) w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w); });
+    });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => {});
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    reloading = true;
+    flushSaves().finally(() => location.reload());
+  });
+}
+
+(async function init() {
+  try {
+    await loadAll();
+  } catch (err) {
+    $('#view').replaceChildren(h('div', { class: 'empty' }, h('h2', { text: 'Хранилище недоступно' }),
+      h('p', { text: 'Safari не дал доступ к хранилищу. Закройте приложение и откройте снова. Если включён частный доступ — выключите его.' })));
+    return;
+  }
+  if (DEMO && entries.size === 0) {
+    $('#view').replaceChildren(h('div', { class: 'empty' }, h('h2', { text: 'Готовлю примеры…' }), h('p', { text: 'Это займёт несколько секунд.' })));
+    try { await generateDemo(); } catch (e) { console.warn(e); }
+  }
+  if (settings.pinHash) lockApp();
+  renderNav();
+  renderView();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  registerSW();
+})();
+
+</script>
+</body>
+</html>
