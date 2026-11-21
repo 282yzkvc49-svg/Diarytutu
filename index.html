@@ -165,18 +165,44 @@
   .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; flex-wrap: wrap; }
 
   /* ---------- Настроение ---------- */
-  .moods { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-  .mood {
-    aspect-ratio: 1; min-height: 44px; max-height: 64px; border-radius: 50%; border: 0; background: var(--surface);
-    box-shadow: inset 0 0 0 1px var(--line); font-size: clamp(22px, 6vw, 32px); line-height: 1; padding: 0;
-    display: flex; align-items: center; justify-content: center; justify-self: center; width: 100%; max-width: 64px;
-    transition: transform .15s;
+  /* Бегунок с лицом. Лицо всегда светлое (цвет настроения + белый), поэтому черты лица одного тёмного цвета в обеих темах. */
+  .mslider { display: flex; align-items: center; gap: 14px; }
+  .mslider .face { flex: none; filter: drop-shadow(0 6px 10px rgb(20 24 60 / .18)); }
+  .ms-main { flex: 1; min-width: 0; }
+  .ms-cap { display: flex; align-items: baseline; gap: 8px; min-height: 30px; }
+  .ms-label { font: 600 20px/1.2 var(--serif); }
+  .mslider.big .ms-label { font-size: 23px; }
+  .mslider.unset .ms-label { font: 400 17px/1.2 var(--sans); color: var(--muted); }
+  .ms-num { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .ms-clear { margin: -8px -10px -8px auto; padding: 0 10px; font-size: 14px; color: var(--muted); }
+  .ms-track { position: relative; height: 48px; touch-action: pan-y; cursor: pointer; -webkit-user-select: none; user-select: none; border-radius: 14px; }
+  .ms-track:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .ms-rail {
+    position: absolute; left: 18px; right: 18px; top: 50%; height: 10px; margin-top: -5px; border-radius: 5px;
+    background: linear-gradient(90deg, var(--m1), var(--m2), var(--m3), var(--m4), var(--m5), var(--m6), var(--m7));
   }
-  .mood[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--mc), inset 0 0 0 30px color-mix(in srgb, var(--mc) 35%, var(--surface)); transform: scale(1.06); }
-  .mood-caption { text-align: center; min-height: 22px; margin-top: 8px; font-size: 15px; color: var(--muted); }
+  .ms-rail i { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgb(255 255 255 / .8); }
+  .ms-thumb {
+    position: absolute; top: 50%; left: calc(18px + var(--p, .5) * (100% - 36px)); width: 34px; height: 34px; margin: -17px 0 0 -17px;
+    border-radius: 50%; background: var(--mcol, var(--surface)); border: 3px solid var(--surface);
+    box-shadow: 0 2px 10px rgb(20 24 60 / .35); pointer-events: none;
+  }
+  .mslider.unset .ms-rail { opacity: .5; }
+  .mslider.unset .ms-thumb { background: var(--surface); border: 2px dashed var(--muted); box-shadow: none; }
+  .ms-ends { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); padding: 0 6px; margin-top: -6px; }
+  .face .f-head { fill: color-mix(in oklab, var(--face, #bdb9ae) 60%, #ffffff); stroke: color-mix(in oklab, var(--face, #bdb9ae) 85%, #1c2033); stroke-width: 2; }
+  .face .f-ink { fill: #262a45; }
+  .face .f-line { fill: none; stroke: #262a45; stroke-width: 3.4; stroke-linecap: round; }
+  .face .f-mouth { fill: #262a45; stroke: #262a45; stroke-width: 3.8; stroke-linecap: round; stroke-linejoin: round; }
+  .face .f-cheek { fill: #ff6b6b; }
+  .face .f-tear { fill: #6fb8f5; }
+  .face.unset .f-head { fill: var(--surface); stroke: var(--line); }
+  .face.unset .f-ink, .face.unset .f-mouth { fill: var(--muted); stroke: var(--muted); }
+  .face.unset .f-line { stroke: var(--muted); }
   .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
   .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 6px; border-radius: 999px; background: color-mix(in srgb, var(--mc) 28%, var(--surface)); font-size: 15px; }
   .pill .e { font-size: 22px; }
+  .pill .face { flex: none; }
 
   /* ---------- Сегодня ---------- */
   .sky {
@@ -193,7 +219,32 @@
   .streak { margin-top: 14px; font-size: 15px; color: var(--muted); }
   .streak b { color: var(--ink); font-weight: 600; }
   .ask { font: 500 19px var(--serif); margin: 22px 0 12px; }
-  .today-entry { margin-top: 18px; }
+  .today-entry { margin-top: 18px; display: grid; gap: 12px; }
+  .today-title { text-align: left; border: 0; background: none; padding: 4px 0; font: 600 20px/1.3 var(--serif); color: var(--ink); }
+
+  /* Три окна дня */
+  .parts { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 640px) { .parts { grid-template-columns: repeat(3, 1fr); } }
+  .part-tile {
+    display: flex; flex-direction: column; gap: 6px; text-align: left; border: 0; padding: 12px 14px 14px; min-height: 84px;
+    border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); min-width: 0;
+  }
+  .part-tile.now { box-shadow: inset 0 0 0 2px var(--ink); }
+  .part-h { display: flex; align-items: center; gap: 8px; font: 600 17px var(--serif); color: var(--ink); }
+  .part-h svg.i { width: 20px; height: 20px; color: var(--muted); }
+  .now-badge { font: 500 12px var(--sans); color: var(--on-ink); background: var(--ink); border-radius: 999px; padding: 2px 8px; }
+  .part-s { font-size: 15px; line-height: 1.45; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .part-s.blank { color: var(--muted); }
+  .today-actions { gap: 12px; }
+  .today-actions .thumbs { margin-top: 0; }
+  .today-actions .thumbs img { width: 44px; height: 44px; }
+  .part-block .part-h { margin-bottom: 8px; cursor: text; }
+  .part-note { font-size: 14px; color: var(--muted); margin: -2px 0 8px; }
+  .e-text.part { min-height: 120px; }
+  .part-block.now .e-text { box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .part-block.now .e-text:focus { box-shadow: inset 0 0 0 2px var(--ink); }
+  .read-part { margin-top: 22px; }
+  .read-part .part-h { margin-bottom: -6px; }
   .preview {
     display: block; width: 100%; text-align: left; border: 0; padding: 14px 16px; border-radius: var(--radius);
     background: var(--surface); box-shadow: inset 0 0 0 1px var(--line);
@@ -432,7 +483,7 @@
   .gallery.read { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
   .gallery.read .gtile { aspect-ratio: 4 / 3; }
   .gtile.novideo { display: flex; align-items: center; justify-content: center; }
-  @media (max-width: 359px) { .moods { gap: 3px; } .mood { min-height: 0; } }
+  @media (max-width: 359px) { .mslider { gap: 10px; } .mslider .face { width: 64px; height: 64px; } }
   #ask { width: min(420px, calc(100vw - 32px)); }
   .ask-text { margin: 0 0 18px; font-size: 17px; line-height: 1.45; }
   .btn.danger-fill { background: var(--danger); color: var(--on-ink); box-shadow: none; font-weight: 600; }
@@ -467,9 +518,10 @@
 
 /* ================= Настройки приложения ================= */
 const APP_ID = 'diary';
-const APP_VERSION = '1.0.0';      // повышай вместе с CACHE в sw.js
+const APP_VERSION = '1.1.0';      // повышай вместе с CACHE в sw.js
 const DB_VERSION = 1;             // структура IndexedDB (хранилища, индексы)
-const SCHEMA_VERSION = 1;         // форма данных; при изменении — шаг в migrateData()
+const SCHEMA_VERSION = 2;         // форма данных; при изменении — шаг в migrateData()
+const ARCHIVE_FORMAT = 2;         // формат data.json в копии; старые форматы импорт читает всегда
 const PREVIEW = !!window.__DIARY_PREVIEW__;   // превью-сборка для просмотра в Claude: только примеры, без установки
 const DEMO = PREVIEW || (() => { try { return localStorage.getItem(APP_ID + ':demo') === '1'; } catch (e) { return false; } })();
 const DB_NAME = DEMO ? 'diary-demo' : 'diary';
@@ -477,6 +529,12 @@ const DB_NAME = DEMO ? 'diary-demo' : 'diary';
 const MOODS = [null,
   { e: '😭', t: 'Ужасно' }, { e: '😢', t: 'Плохо' }, { e: '🙁', t: 'Так себе' }, { e: '😐', t: 'Нормально' },
   { e: '🙂', t: 'Хорошо' }, { e: '😄', t: 'Отлично' }, { e: '🤩', t: 'Восторг' }];
+// Запись дня делится на три окна. Поле text — общая запись из версий до 1.1: её не трогаем и показываем как «Запись».
+const PARTS = [
+  { key: 'morning', label: 'Утро', ask: 'Как началось утро?', icon: 'sunrise' },
+  { key: 'afternoon', label: 'День', ask: 'Что было днём?', icon: 'sun' },
+  { key: 'evening', label: 'Вечер', ask: 'Как прошёл вечер?', icon: 'moon' }];
+const TEXT_KEYS = ['text', 'morning', 'afternoon', 'evening'];
 const DEFAULT_EMOTIONS = ['Радость', 'Спокойствие', 'Благодарность', 'Любовь', 'Гордость', 'Интерес', 'Вдохновение',
   'Усталость', 'Тревога', 'Грусть', 'Раздражение', 'Злость', 'Одиночество', 'Скука', 'Стресс'];
 const DEFAULT_FACTORS = [
@@ -532,6 +590,9 @@ const ICONS = {
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  sunrise: '<path d="M3 19h18M6.5 19a5.5 5.5 0 0 1 11 0"/><path d="M12 6v3M5.3 10.3l1.5 1.5M18.7 10.3l-1.5 1.5M2.5 15h2M19.5 15h2"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
   jump: '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M10 15h6M13 12.5l3 2.5-3 2.5"/>'
 };
 function icon(name, extra = '') {
@@ -664,7 +725,7 @@ let tagCounts = new Map(), peopleCounts = new Map();
 
 function blankEntry(date) {
   const now = Date.now();
-  return { id: uid(), date, title: '', text: '', mood: null, emotions: [], tags: [], people: [], factors: [],
+  return { id: uid(), date, title: '', text: '', morning: '', afternoon: '', evening: '', mood: null, emotions: [], tags: [], people: [], factors: [],
     sleep: null, media: [], favorite: false, milestone: false, createdAt: now, updatedAt: now };
 }
 function normEntry(raw) {
@@ -672,10 +733,12 @@ function normEntry(raw) {
   for (const k of ['emotions', 'tags', 'people', 'factors', 'media']) if (!Array.isArray(e[k])) e[k] = [];
   e.media = e.media.filter((m) => m && m.id).map((m) => ({ id: m.id, kind: m.kind, duration: m.duration || 0 }));
   if (e.mood != null) e.mood = Math.min(7, Math.max(1, Math.round(e.mood)));
-  e.title = e.title || ''; e.text = e.text || '';
+  for (const k of ['title', ...TEXT_KEYS]) e[k] = typeof e[k] === 'string' ? e[k] : '';
   return e;
 }
-const isEmpty = (e) => !e || (!e.text.trim() && !e.title.trim() && e.mood == null && !e.media.length &&
+// Весь текст записи: старая общая запись, затем утро, день и вечер.
+const bodyText = (e) => TEXT_KEYS.map((k) => e[k].trim()).filter(Boolean).join('\n\n');
+const isEmpty = (e) => !e || (!TEXT_KEYS.some((k) => e[k].trim()) && !e.title.trim() && e.mood == null && !e.media.length &&
   !e.emotions.length && !e.tags.length && !e.people.length && !e.factors.length && e.sleep == null);
 const hasDay = (d) => { const e = byDate.get(d); return !!e && !isEmpty(e); };
 
@@ -703,16 +766,20 @@ async function loadAll() {
   entries.clear(); byDate.clear(); tombs.clear();
   for (const raw of es) { const e = normEntry(raw); entries.set(e.id, e); byDate.set(e.date, e); }
   for (const t of ts) tombs.set(t.id, t);
-  await migrateData(metaMap.schemaVersion || SCHEMA_VERSION);
+  await migrateData(metaMap.schemaVersion || (es.length ? 1 : SCHEMA_VERSION));
   rebuildIndex();
 }
 
 // Приводит данные старых версий к текущей схеме. Старые записи не теряются.
 async function migrateData(from) {
   let v = from;
-  // Пример будущего шага:
-  // if (v < 2) { for (const e of entries.values()) e.newField = e.newField ?? null; await idb.putMany('entries', [...entries.values()]); v = 2; }
-  v = SCHEMA_VERSION;
+  // 1 → 2 (версия 1.1): запись дня делится на утро, день и вечер. Новые поля пустые, старый текст остаётся в text.
+  // updatedAt не меняем — иначе перенос между устройствами посчитал бы все старые записи изменёнными.
+  if (v < 2) {
+    if (entries.size) await idb.putMany('entries', [...entries.values()]);   // normEntry уже добавил пустые поля
+    v = 2;
+  }
+  // Следующий шаг: if (v < 3) { …; v = 3; }
   if (v !== from || !(await idb.get('meta', 'schemaVersion'))) await idb.put('meta', { key: 'schemaVersion', value: v });
 }
 const saveSettings = () => idb.put('meta', { key: 'settings', value: settings }).catch(storageError);
@@ -720,7 +787,7 @@ const saveMeta = () => idb.put('meta', { key: 'state', value: meta }).catch(stor
 
 function syncHashtags(e) {
   const re = /#([\p{L}\p{N}_-]{2,40})/gu;
-  for (const src of [e.text, e.title]) for (const m of String(src).matchAll(re)) addUnique(e.tags, m[1]);
+  for (const src of [e.title, ...TEXT_KEYS.map((k) => e[k])]) for (const m of String(src).matchAll(re)) addUnique(e.tags, m[1]);
 }
 async function saveEntry(e, touch = true) {
   if (touch) e.updatedAt = Date.now();
@@ -757,15 +824,19 @@ async function deleteEntry(e, { withMedia = true, tomb = true } = {}) {
   if (tomb) await putTomb(e.id, 'entry');
   rebuildIndex();
 }
+// Склеивает два текста одного окна: если один содержит другой — берётся длинный, иначе оба через разделитель.
+function mergeText(ta, tb, aFirst) {
+  const a = ta.trim(), b = tb.trim();
+  if (!a) return tb;
+  if (!b || norm(a).includes(norm(b))) return ta;
+  if (norm(b).includes(norm(a))) return tb;
+  return aFirst ? a + '\n\n— — —\n\n' + b : b + '\n\n— — —\n\n' + a;
+}
 // Объединяет запись b в запись a (одна дата, два устройства или смена даты).
 function mergeInto(a, b) {
   const newer = (b.updatedAt || 0) > (a.updatedAt || 0) ? b : a, older = newer === a ? b : a;
-  const ta = a.text.trim(), tb = b.text.trim();
-  if (!ta) a.text = b.text;
-  else if (tb && !norm(ta).includes(norm(tb))) {
-    if (norm(tb).includes(norm(ta))) a.text = b.text;
-    else { const [x, y] = (a.createdAt || 0) <= (b.createdAt || 0) ? [ta, tb] : [tb, ta]; a.text = x + '\n\n— — —\n\n' + y; }
-  }
+  const aFirst = (a.createdAt || 0) <= (b.createdAt || 0);
+  for (const k of TEXT_KEYS) a[k] = mergeText(a[k], b[k], aFirst);
   a.title = newer.title || older.title;
   a.mood = newer.mood ?? older.mood;
   a.sleep = newer.sleep ?? older.sleep;
@@ -1029,7 +1100,7 @@ async function exportArchive({ since = 0, withMedia = true }, onProgress) {
     }
   }
   const data = {
-    app: APP_ID, format: 1, schemaVersion: SCHEMA_VERSION, appVersion: APP_VERSION,
+    app: APP_ID, format: ARCHIVE_FORMAT, schemaVersion: SCHEMA_VERSION, appVersion: APP_VERSION,
     exportedAt: new Date().toISOString(), since: since ? new Date(since).toISOString() : null, withMedia,
     entries: es, media: mediaOut, tombstones: [...tombs.values()].filter((t) => t.deletedAt >= since),
     settings: { emotions: settings.emotions, factors: settings.factors, dayStart: settings.dayStart }
@@ -1049,6 +1120,7 @@ async function importFile(file, onProgress) {
     data = JSON.parse(await dj.text());
   }
   if (!data || data.app !== APP_ID || !Array.isArray(data.entries)) throw new Error('not-diary');
+  if ((Number(data.format) || 1) > ARCHIVE_FORMAT) throw new Error('newer-format');   // format 1 и 2 читаются; поля утро/день/вечер у format 1 просто пустые
   return mergeImport(data, zip, onProgress);
 }
 
@@ -1211,15 +1283,127 @@ function sysBanners() {
 }
 
 /* ---------- Общие элементы ---------- */
-const skyColor = (m) => m ? `var(--m${m})` : 'var(--surface-2)';
-function moodRow(value, onPick) {
-  const wrap = h('div', { class: 'moods', role: 'group', 'aria-label': 'Настроение по шкале от 1 до 7' });
-  for (let m = 1; m <= 7; m++) {
-    wrap.append(h('button', { class: 'mood', type: 'button', style: `--mc: var(--m${m})`, 'aria-pressed': String(value === m),
-      'aria-label': `Настроение ${m} из 7 — ${MOODS[m].t.toLowerCase()}`, onclick: () => onPick(m) }, MOODS[m].e));
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+// Цвет для дробного настроения 1…7 — смесь двух соседних цветов шкалы (бегунок двигается плавно).
+function moodColor(v) {
+  if (v == null) return 'var(--surface-2)';
+  v = Math.max(1, Math.min(7, v));
+  const i = Math.floor(v), t = v - i;
+  if (i >= 7 || t < 0.02) return `var(--m${i})`;
+  if (t > 0.98) return `var(--m${i + 1})`;
+  return `color-mix(in oklab, var(--m${i}) ${Math.round((1 - t) * 100)}%, var(--m${i + 1}))`;
+}
+const skyColor = (m) => moodColor(m);
+const currentPart = () => { const hr = new Date().getHours(); return hr >= 5 && hr < 12 ? 'morning' : hr >= 12 && hr < 18 ? 'afternoon' : 'evening'; };
+
+// Лицо настроения: брови, глаза, рот, румянец и слеза плавно меняются от 1 (грустно) до 7 (восторг).
+function makeFace(size) {
+  const svg = S('svg', { viewBox: '0 0 100 100', width: size, height: size, class: 'face', 'aria-hidden': 'true' });
+  const head = S('circle', { cx: 50, cy: 50, r: 46, class: 'f-head' });
+  const cheekL = S('circle', { cx: 26, cy: 61, r: 7.5, class: 'f-cheek' }), cheekR = S('circle', { cx: 74, cy: 61, r: 7.5, class: 'f-cheek' });
+  const tear = S('path', { class: 'f-tear', d: 'M31 51 C27 58 26.5 62 31 63.5 C35.5 62 35 58 31 51 Z' });
+  const eyeL = S('ellipse', { cx: 36, cy: 44, rx: 5, class: 'f-ink' }), eyeR = S('ellipse', { cx: 64, cy: 44, rx: 5, class: 'f-ink' });
+  const browL = S('path', { class: 'f-line' }), browR = S('path', { class: 'f-line' });
+  const mouth = S('path', { class: 'f-mouth' });
+  svg.append(head, cheekL, cheekR, eyeL, eyeR, tear, browL, browR, mouth);
+  svg.set = (v) => {
+    const unset = v == null, x = unset ? 4 : Math.max(1, Math.min(7, v));
+    const s = (x - 1) / 6, k = (s - 0.5) * 2, sad = clamp01(-k), happy = clamp01(k);
+    svg.classList.toggle('unset', unset);
+    svg.style.setProperty('--face', moodColor(x));
+    const squint = clamp01((s - 0.72) / 0.28);
+    for (const e of [eyeL, eyeR]) { e.setAttribute('ry', (5.6 - squint * 3.3).toFixed(2)); e.setAttribute('cy', (44 + squint * 1.2 + sad * 1.5).toFixed(2)); }
+    const by = 32 - happy * 3, inner = by - sad * 7, outer = by + sad * 2.5, arch = Math.min(inner, outer) - 1.5 - happy * 2.5;
+    browL.setAttribute('d', `M26 ${outer.toFixed(2)} Q35 ${arch.toFixed(2)} 44 ${inner.toFixed(2)}`);
+    browR.setAttribute('d', `M56 ${inner.toFixed(2)} Q65 ${arch.toFixed(2)} 74 ${outer.toFixed(2)}`);
+    const c = k * 22, w = 16 + happy * 6 - sad * 3, my = 69 - c * 0.3, open = clamp01((s - 0.68) / 0.27);
+    const lo = my + c, up = my + c * (1 - open * 0.75);
+    mouth.setAttribute('d', `M${(50 - w).toFixed(2)} ${my.toFixed(2)} Q50 ${lo.toFixed(2)} ${(50 + w).toFixed(2)} ${my.toFixed(2)} Q50 ${up.toFixed(2)} ${(50 - w).toFixed(2)} ${my.toFixed(2)} Z`);
+    mouth.setAttribute('fill-opacity', open.toFixed(2));
+    const blush = (clamp01((s - 0.6) / 0.32) * 0.5).toFixed(2);
+    cheekL.setAttribute('opacity', blush); cheekR.setAttribute('opacity', blush);
+    tear.setAttribute('opacity', clamp01((0.2 - s) / 0.14).toFixed(2));
+  };
+  return svg;
+}
+function faceIcon(v, size = 26) { const f = makeFace(size); f.set(v); return f; }
+
+// Бегунок настроения. Свой, на pointer-событиях: у стандартного range на iPhone и iPad
+// касание дорожки ничего не делает, а здесь можно и коснуться, и тянуть.
+// Пока тянешь — значение дробное и лицо меняется плавно; при отпускании встаёт на ближайшее целое 1…7.
+function moodSlider({ value = null, big = false, onInput, onCommit }) {
+  let v = value, committed = value, drag = null, anim = 0;
+  const face = makeFace(big ? 96 : 78);
+  const label = h('div', { class: 'ms-label' }), num = h('div', { class: 'ms-num' });
+  const clearBtn = h('button', { class: 'btn ghost ms-clear', type: 'button', text: 'Сбросить', onclick: () => commit(null) });
+  const thumb = h('div', { class: 'ms-thumb' });
+  const track = h('div', { class: 'ms-track', role: 'slider', tabindex: '0', 'aria-label': 'Настроение', 'aria-valuemin': '1', 'aria-valuemax': '7' },
+    h('div', { class: 'ms-rail' }, [1, 2, 3, 4, 5, 6, 7].map((i) => h('i', { style: `left:${((i - 1) / 6 * 100).toFixed(3)}%` }))), thumb);
+  const el = h('div', { class: 'mslider' + (big ? ' big' : '') }, face,
+    h('div', { class: 'ms-main' },
+      h('div', { class: 'ms-cap' }, label, num, clearBtn), track,
+      h('div', { class: 'ms-ends', 'aria-hidden': 'true' }, h('span', { text: 'грустно' }), h('span', { text: 'отлично' }))));
+  const paint = (x) => {
+    face.set(x);
+    el.classList.toggle('unset', x == null);
+    track.style.setProperty('--p', x == null ? 0.5 : (x - 1) / 6);
+    track.style.setProperty('--mcol', moodColor(x));
+    const r = x == null ? null : Math.round(x);
+    label.textContent = r ? MOODS[r].t : 'Передвиньте бегунок';
+    num.textContent = r ? r + ' из 7' : '';
+    clearBtn.hidden = committed == null || drag != null;
+    if (r) { track.setAttribute('aria-valuenow', r); track.setAttribute('aria-valuetext', MOODS[r].t + ', ' + r + ' из 7'); }
+    else { track.removeAttribute('aria-valuenow'); track.setAttribute('aria-valuetext', 'не отмечено'); }
+  };
+  const set = (x) => { v = x; paint(x); onInput && onInput(x); };
+  const valAt = (clientX) => { const r = track.getBoundingClientRect(); return 1 + clamp01((clientX - r.left - 18) / Math.max(1, r.width - 36)) * 6; };
+  function commit(r) {
+    cancelAnimationFrame(anim);
+    const changed = r !== committed;
+    committed = r;
+    if (r == null) set(null);
+    else {
+      const from = v == null ? r : v, t0 = performance.now();
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const step = (now) => {
+        const q = reduce ? 1 : Math.min(1, (now - t0) / 170);
+        set(from + (r - from) * (1 - Math.pow(1 - q, 3)));
+        if (q < 1) anim = requestAnimationFrame(step); else set(r);
+      };
+      anim = requestAnimationFrame(step);
+    }
+    if (changed) onCommit && onCommit(r);
   }
-  wrap.setValue = (v) => [...wrap.children].forEach((b, i) => b.setAttribute('aria-pressed', String(v === i + 1)));
-  return wrap;
+  track.addEventListener('pointerdown', (ev) => {
+    if (ev.button > 0) return;
+    cancelAnimationFrame(anim);
+    drag = { id: ev.pointerId, start: v };
+    try { track.setPointerCapture(ev.pointerId); } catch (e) {}
+    set(valAt(ev.clientX));
+  });
+  track.addEventListener('pointermove', (ev) => { if (drag && ev.pointerId === drag.id) set(valAt(ev.clientX)); });
+  track.addEventListener('pointerup', (ev) => {
+    if (!drag || ev.pointerId !== drag.id) return;
+    drag = null;
+    commit(Math.round(valAt(ev.clientX)));
+  });
+  // Страницу начали прокручивать, а не двигать бегунок — возвращаем прежнее значение.
+  track.addEventListener('pointercancel', () => { if (!drag) return; const back = drag.start; drag = null; set(back); });
+  track.addEventListener('lostpointercapture', () => { if (drag) { const back = drag.start; drag = null; set(back); } });
+  track.addEventListener('keydown', (ev) => {
+    const cur = committed;
+    let n;
+    if (ev.key === 'ArrowRight' || ev.key === 'ArrowUp') n = cur == null ? 4 : Math.min(7, cur + 1);
+    else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowDown') n = cur == null ? 4 : Math.max(1, cur - 1);
+    else if (ev.key === 'Home') n = 1;
+    else if (ev.key === 'End') n = 7;
+    else if ((ev.key === 'Delete' || ev.key === 'Backspace') && cur != null) n = null;
+    else return;
+    ev.preventDefault();
+    commit(n);
+  });
+  paint(v);
+  return el;
 }
 function thumbsRow(e, n = 3) {
   const vis = e.media.filter((m) => m.kind === 'photo' || m.kind === 'video').slice(0, n);
@@ -1255,11 +1439,9 @@ function openDay(d) {
 function renderToday(v) {
   const t = todayStr();
   const e = byDate.get(t);
-  const capEl = h('div', { class: 'mood-caption' });
   const streakEl = h('div', { class: 'streak' });
   const entryEl = h('div', { class: 'today-entry' });
   const stripEl = h('div', { class: 'strip' });
-  const fillCap = (m) => { capEl.textContent = m ? MOODS[m].t : 'Отметьте настроение одним касанием'; };
   const fillStreak = () => {
     const { n, todayDone } = streakInfo();
     streakEl.replaceChildren();
@@ -1268,20 +1450,21 @@ function renderToday(v) {
       if (!todayDone) streakEl.append(' — запишите сегодня, чтобы её продолжить');
     } else streakEl.append('Начните серию: отметьте сегодняшний день');
   };
+  // Три окна дня: утро, день, вечер. Касание открывает запись сразу на нужном окне.
   const fillEntry = () => {
-    const cur = byDate.get(t);
+    const cur = byDate.get(t), now = currentPart();
     entryEl.replaceChildren();
-    if (cur && (cur.text.trim() || cur.title.trim() || cur.media.length)) {
-      entryEl.append(h('button', { class: 'preview', type: 'button', onclick: () => openEditor(t) },
-        h('div', { class: 't', text: cur.title || 'Запись дня' }),
-        cur.text.trim() ? h('div', { class: 's', text: cur.text }) : null,
-        thumbsRow(cur, 4),
-        h('div', { class: 'small muted', style: 'margin-top:8px', text: 'Коснитесь, чтобы дополнить' })));
-    } else {
-      entryEl.append(h('div', { class: 'row' },
-        h('button', { class: 'btn primary', type: 'button', onclick: () => openEditor(t) }, icon('edit'), 'Написать о дне'),
-        photoQuickBtn(t)));
-    }
+    if (cur && cur.title.trim()) entryEl.append(h('button', { class: 'today-title', type: 'button', onclick: () => openEditor(t, { focus: 'title' }) }, cur.title));
+    entryEl.append(h('div', { class: 'parts' }, PARTS.map((p) => {
+      const txt = cur ? cur[p.key].trim() : '';
+      return h('button', { class: 'part-tile' + (p.key === now ? ' now' : '') + (txt ? ' filled' : ''), type: 'button',
+        'aria-label': p.label + (txt ? ': ' + firstSentence(txt, 80) : ' — добавить'), onclick: () => openEditor(t, { focus: p.key }) },
+        h('span', { class: 'part-h' }, icon(p.icon), h('span', { text: p.label }), p.key === now ? h('span', { class: 'now-badge', text: 'сейчас' }) : null),
+        h('span', { class: 'part-s' + (txt ? '' : ' blank'), text: txt || p.ask }));
+    })));
+    if (cur && cur.text.trim()) entryEl.append(h('button', { class: 'preview', type: 'button', onclick: () => openEditor(t, { focus: 'text' }) },
+      h('div', { class: 't', text: 'Запись' }), h('div', { class: 's', text: cur.text })));
+    entryEl.append(h('div', { class: 'row today-actions' }, photoQuickBtn(t), cur ? thumbsRow(cur, 4) : null));
     hydrateThumbs(entryEl);
   };
   const fillStrip = () => {
@@ -1296,22 +1479,22 @@ function renderToday(v) {
       h('span', { class: i === 0 ? 'today-mark' : null, text: WD_S[parseYmd(d).getDay()] })));
     }
   };
-  const row = moodRow(e ? e.mood : null, async (m) => {
-    const cur = byDate.get(t) || blankEntry(t);
-    cur.mood = cur.mood === m ? null : m;
-    if (entries.has(cur.id) && isEmpty(cur)) await deleteEntry(cur);
-    else await saveEntry(cur);
-    row.setValue(cur.mood);
-    sky.style.setProperty('--sky', skyColor(cur.mood));
-    fillCap(cur.mood); fillStreak(); fillEntry(); fillStrip();
-    toast(cur.mood ? 'Настроение сохранено' : 'Оценка снята');
-  });
+  const slider = moodSlider({ value: e ? e.mood : null, big: true,
+    onInput: (x) => sky.style.setProperty('--sky', skyColor(x)),
+    onCommit: async (m) => {
+      const cur = byDate.get(t) || blankEntry(t);
+      cur.mood = m;
+      if (entries.has(cur.id) && isEmpty(cur)) await deleteEntry(cur);
+      else await saveEntry(cur);
+      fillStreak(); fillEntry(); fillStrip();
+      toast(m ? 'Настроение сохранено' : 'Оценка снята');
+    } });
   const sky = h('section', { class: 'sky', style: `--sky: ${skyColor(e ? e.mood : null)}` },
     h('div', { class: 'top' },
       h('div', { class: 'date-hero' }, h('div', { class: 'd', text: fmtDate(t, false) }), h('div', { class: 'w', text: cap(weekday(t)) + ', ' + t.slice(0, 4) })),
       settingsBtn()),
-    streakEl, h('div', { class: 'ask', text: 'Как прошёл день?' }), row, capEl, entryEl);
-  fillCap(e ? e.mood : null); fillStreak(); fillEntry(); fillStrip();
+    streakEl, h('div', { class: 'ask', text: 'Как настроение?' }), slider, entryEl);
+  fillStreak(); fillEntry(); fillStrip();
   put(v, sky, sysBanners(), backupBanner(), memoriesSection(),
     h('section', { class: 'section' }, h('h2', { text: 'Две недели' }),
       h('p', { class: 'sub', text: 'Цвет — настроение дня. Коснитесь дня, чтобы открыть запись.' }), stripEl));
@@ -1340,7 +1523,7 @@ function memoryCard(e, when) {
     h('div', { class: 'body' },
       h('div', { class: 'when' }, e.mood ? h('span', { class: 'dot', style: `background: var(--m${e.mood})` }) : null,
         h('span', { text: when + ', ' + fmtDate(e.date) })),
-      h('div', { class: 'thesis', text: e.title || firstSentence(e.text) || (e.mood ? MOODS[e.mood].e + ' ' + MOODS[e.mood].t : 'Запись без текста') })));
+      h('div', { class: 'thesis', text: e.title || firstSentence(bodyText(e)) || (e.mood ? MOODS[e.mood].e + ' ' + MOODS[e.mood].t : 'Запись без текста') })));
 }
 function memoriesSection() {
   const t = todayStr(), md = t.slice(5), y = +t.slice(0, 4);
@@ -1370,7 +1553,7 @@ const hayCache = new Map();
 function hay(e) {
   const c = hayCache.get(e.id);
   if (c && c.u === e.updatedAt) return c.s;
-  const s = norm([e.title, e.text, e.tags.join(' '), e.people.join(' '), e.emotions.join(' ')].join(' '));
+  const s = norm([e.title, bodyText(e), e.tags.join(' '), e.people.join(' '), e.emotions.join(' ')].join(' '));
   hayCache.set(e.id, { u: e.updatedAt, s });
   return s;
 }
@@ -1426,8 +1609,9 @@ function snippetAround(text, terms) {
 }
 function entryItem(e, terms) {
   const d = parseYmd(e.date);
-  const lead = e.title || firstSentence(e.text, 110) || (e.mood ? MOODS[e.mood].t : 'Без текста');
-  const rest = e.title || terms.length ? e.text : e.text.trim().slice(firstSentence(e.text, 110).replace(/…$/, '').length).trim();
+  const body = bodyText(e);
+  const lead = e.title || firstSentence(body, 110) || (e.mood ? MOODS[e.mood].t : 'Без текста');
+  const rest = e.title || terms.length ? body : body.slice(firstSentence(body, 110).replace(/…$/, '').length).trim();
   return h('button', { class: 'item', type: 'button', style: e.mood ? `--mc: var(--m${e.mood})` : null, onclick: () => openEntry(e.id) },
     h('div', { class: 'day' }, h('div', { class: 'n', text: d.getDate() }), h('div', { class: 'w', text: WD_S[d.getDay()] })),
     h('div', { class: 'grow' },
@@ -1671,11 +1855,11 @@ function renderEntryView(e, s) {
   const body = h('div', { class: 'sheet-body' },
     dateBlock(e.date),
     (e.mood || e.emotions.length) ? h('div', { class: 'row', style: 'margin-top:14px' },
-      e.mood ? h('span', { class: 'pill', style: `--mc: var(--m${e.mood})` }, h('span', { class: 'e', text: MOODS[e.mood].e }), MOODS[e.mood].t) : null,
+      e.mood ? h('span', { class: 'pill', style: `--mc: var(--m${e.mood})` }, faceIcon(e.mood, 28), MOODS[e.mood].t) : null,
       e.emotions.map((x) => h('span', { class: 'chip static', text: x }))) : null,
     e.title ? h('div', { class: 'read-title', text: e.title }) : null,
-    e.text.trim() ? h('div', { class: 'read-text', text: e.text }) : null,
-    !e.title && !e.text.trim() ? h('p', { class: 'muted', style: 'margin-top:18px', text: 'Текста пока нет. Нажмите «Изменить», чтобы дописать.' }) : null,
+    readParts(e),
+    !e.title && !bodyText(e) ? h('p', { class: 'muted', style: 'margin-top:18px', text: 'Текста пока нет. Нажмите «Изменить», чтобы дописать.' }) : null,
     mediaBlock(e, false), metaBlock(e),
     h('div', { class: 'e-block', style: 'text-align:center' },
       h('button', { class: 'btn ghost danger', type: 'button', onclick: () => confirmDelete(e) }, icon('trash'), 'Удалить запись')));
@@ -1683,6 +1867,15 @@ function renderEntryView(e, s) {
   s.panel.replaceChildren(bar, body);
   s.panel.scrollTop = 0;
   hydrateThumbs(body);
+}
+// Текст записи в просмотре: окна утро, день, вечер; старая общая запись — без заголовка, если окон нет.
+function readParts(e) {
+  const parts = PARTS.filter((p) => e[p.key].trim());
+  const legacy = e.text.trim();
+  if (!parts.length && !legacy) return null;
+  if (!parts.length) return h('div', { class: 'read-text', text: e.text });
+  const sec = (ic, label, txt) => h('section', { class: 'read-part' }, h('div', { class: 'part-h' }, icon(ic), h('span', { text: label })), h('div', { class: 'read-text', text: txt }));
+  return h('div', null, legacy ? sec('book', 'Запись', e.text) : null, parts.map((p) => sec(p.icon, p.label, e[p.key])));
 }
 async function confirmDelete(e) {
   if (!(await ask('Удалить запись за ' + fmtDate(e.date) + '? Фото, видео и голос этой записи тоже удалятся.', 'Удалить', true))) return;
@@ -1730,9 +1923,10 @@ async function changeDate(e, nd) {
   if (entries.has(e.id)) await saveEntry(e);
   return e;
 }
-async function openEditor(dateOrEntry) {
+// opts.focus: 'morning' | 'afternoon' | 'evening' | 'text' | 'title' — сразу поставить курсор в это окно.
+async function openEditor(dateOrEntry, opts = {}) {
   const e = typeof dateOrEntry === 'string' ? (byDate.get(dateOrEntry) || blankEntry(dateOrEntry)) : dateOrEntry;
-  return renderEditorInto(e, openSheet());
+  return renderEditorInto(e, openSheet(), opts);
 }
 function tagEditor(list, counts, prefix, placeholder, onChange) {
   const chipsEl = h('div', { class: 'chips' });
@@ -1763,7 +1957,7 @@ function tagEditor(list, counts, prefix, placeholder, onChange) {
   renderChips(); renderSug();
   return h('div', null, chipsEl, h('div', { class: 'tag-input' }, h('div', { class: 'grow' }, input), h('button', { class: 'btn', type: 'button', text: 'Добавить', onmousedown: (ev) => ev.preventDefault(), onclick: add })), sug);
 }
-function renderEditorInto(e, s) {
+function renderEditorInto(e, s, opts = {}) {
   let rec = null;
   const saved = h('div', { class: 'saved', text: entries.has(e.id) ? 'Изменения сохраняются автоматически' : 'Запись появится, как только вы что-нибудь добавите' });
   const changed = () => scheduleSave(e, saved);
@@ -1777,13 +1971,7 @@ function renderEditorInto(e, s) {
   } });
   dateInput.value = e.date;
 
-  const capEl = h('div', { class: 'mood-caption', text: e.mood ? MOODS[e.mood].t : 'Как прошёл день?' });
-  const row = moodRow(e.mood, (m) => {
-    e.mood = e.mood === m ? null : m;
-    row.setValue(e.mood);
-    capEl.textContent = e.mood ? MOODS[e.mood].t : 'Как прошёл день?';
-    changed();
-  });
+  const slider = moodSlider({ value: e.mood, onCommit: (m) => { e.mood = m; changed(); } });
 
   const emoList = [...settings.emotions];
   for (const x of e.emotions) if (!emoList.some((y) => norm(y) === norm(x))) emoList.push(x);
@@ -1800,11 +1988,21 @@ function renderEditorInto(e, s) {
   const title = h('input', { class: 'e-title', type: 'text', maxlength: '120', placeholder: 'Главное за день — одной строкой',
     enterkeyhint: 'next', 'aria-label': 'Главное за день', oninput: (ev) => { e.title = ev.target.value; changed(); } });
   title.value = e.title;
-  const text = h('textarea', { class: 'e-text', 'aria-label': 'Текст записи',
-    placeholder: 'Что сегодня происходило? Теги можно ставить прямо в тексте: #отпуск' });
-  text.value = e.text;
-  const grow = () => { text.style.height = 'auto'; text.style.height = Math.max(220, text.scrollHeight + 2) + 'px'; };
-  text.addEventListener('input', () => { e.text = text.value; grow(); changed(); });
+  // Три окна дня. Окно «Запись» — общий текст из версий до 1.1, показывается, только если он есть.
+  const areas = {};
+  const now = e.date === todayStr() ? currentPart() : null;
+  const autoGrow = (ta) => { ta.style.height = 'auto'; ta.style.height = Math.max(120, ta.scrollHeight + 2) + 'px'; };
+  const partBlock = (key, label, ask, ic, note) => {
+    const ta = h('textarea', { class: 'e-text part', 'aria-label': label, placeholder: ask });
+    ta.value = e[key];
+    ta.addEventListener('input', () => { e[key] = ta.value; autoGrow(ta); changed(); });
+    areas[key] = ta;
+    return h('div', { class: 'e-block part-block' + (key === now ? ' now' : '') },
+      h('div', { class: 'part-h', onclick: () => ta.focus() }, icon(ic), h('span', { text: label }), key === now ? h('span', { class: 'now-badge', text: 'сейчас' }) : null),
+      note ? h('p', { class: 'part-note', text: note }) : null, ta);
+  };
+  const legacyBlock = e.text.trim() ? partBlock('text', 'Запись', '', 'book', 'Сделана до того, как запись дня разделилась на утро, день и вечер. Её можно оставить здесь или перенести в нужное окно.') : null;
+  const partBlocks = PARTS.map((p) => partBlock(p.key, p.label, p.ask, p.icon));
 
   const media = h('div');
   const refreshMedia = () => { media.replaceChildren(mediaBlock(e, true, refreshMedia) || ''); hydrateThumbs(media); };
@@ -1859,10 +2057,11 @@ function renderEditorInto(e, s) {
     h('div', { class: 'title', text: 'Запись' }), starBtn(e), flagBtn(e));
   const body = h('div', { class: 'sheet-body' },
     h('label', { class: 'e-date' }, dateD, dateW, dateInput),
-    block('Настроение', row, capEl),
+    block('Настроение', slider),
     block('Эмоции', emo),
     block(null, title),
-    block(null, text),
+    legacyBlock, partBlocks,
+    h('p', { class: 'part-note', text: 'Теги можно ставить прямо в тексте: #отпуск' }),
     block('Фото, видео и голос', h('div', { class: 'row' },
       h('button', { class: 'btn', type: 'button', onclick: () => fileInput.click() }, icon('image'), 'Фото или видео'), micBtn, fileInput), recBox, media),
     block('Теги', tagEditor(e.tags, tagCounts, '#', 'Например: работа, отпуск', changed)),
@@ -1883,7 +2082,13 @@ function renderEditorInto(e, s) {
     return true;
   };
   refreshMedia();
-  requestAnimationFrame(grow);
+  // Курсор в нужное окно — сразу, пока идёт касание, иначе iOS не покажет клавиатуру.
+  const target = opts.focus === 'title' ? title : areas[opts.focus];
+  if (target) { try { target.focus({ preventScroll: true }); } catch (err) { target.focus(); } }
+  requestAnimationFrame(() => {
+    Object.values(areas).forEach(autoGrow);
+    if (target) target.scrollIntoView({ block: 'center' });
+  });
   return { addFiles: doAdd };
 }
 
@@ -2157,7 +2362,8 @@ async function doImport(file, after) {
     if (!sheet) renderView();
   } catch (err) {
     const m = err && err.message;
-    toast(m === 'not-diary' || m === 'not-zip' || m === 'bad-zip' ? 'Это не копия дневника'
+    toast(m === 'newer-format' ? 'Копия сделана в более новой версии дневника — сначала обновите приложение'
+      : m === 'not-diary' || m === 'not-zip' || m === 'bad-zip' ? 'Это не копия дневника'
       : m === 'unsupported-zip' ? 'Архив пересжат — сохраните копию в дневнике заново' : 'Не удалось прочитать файл');
   }
 }
@@ -2372,7 +2578,7 @@ function renderStats(v) {
   const avg = avgOf(ml.map((e) => e.mood));
   const vis = list.reduce((s, e) => s + e.media.filter((m) => m.kind !== 'audio').length, 0);
   const voice = list.reduce((s, e) => s + e.media.filter((m) => m.kind === 'audio').length, 0);
-  const words = list.reduce((s, e) => s + wordsIn(e.text) + wordsIn(e.title), 0);
+  const words = list.reduce((s, e) => s + wordsIn(bodyText(e)) + wordsIn(e.title), 0);
   const kpi = (val, label, small) => h('div', { class: 'kpi' }, h('div', { class: 'v' }, String(val), small ? h('small', { text: small }) : null), h('div', { class: 'k', text: label }));
   v.append(h('div', { class: 'kpis' },
     kpi(list.length, plural(list.length, ['запись', 'записи', 'записей']) + ', это ' + pct + '% дней'),
@@ -2450,13 +2656,13 @@ function renderStats(v) {
 }
 function yearSummary(list, Y) {
   const wm = list.filter((e) => e.mood);
-  const weight = (e) => e.text.length + e.title.length * 3 + e.media.length * 200;
+  const weight = (e) => bodyText(e).length + e.title.length * 3 + e.media.length * 200;
   const best = wm.filter((e) => e.mood >= 5).sort((a, b) => b.mood - a.mood || weight(b) - weight(a)).slice(0, 5);
   const hard = wm.filter((e) => e.mood <= 3).sort((a, b) => a.mood - b.mood || weight(b) - weight(a)).slice(0, 5);
   const ms = list.filter((e) => e.milestone).sort((a, b) => a.date.localeCompare(b.date));
   const rank = (arr, empty) => arr.length ? h('div', { class: 'rank' }, arr.map((e) => h('button', { type: 'button', onclick: () => openEntry(e.id) },
     h('span', { class: 'e', text: e.mood ? MOODS[e.mood].e : '•' }),
-    h('span', { style: 'min-width:0' }, h('div', { class: 'tx', text: e.title || firstSentence(e.text, 90) || (e.mood ? MOODS[e.mood].t : 'Без текста') }), h('div', { class: 'd', text: fmtDate(e.date, false) })),
+    h('span', { style: 'min-width:0' }, h('div', { class: 'tx', text: e.title || firstSentence(bodyText(e), 90) || (e.mood ? MOODS[e.mood].t : 'Без текста') }), h('div', { class: 'd', text: fmtDate(e.date, false) })),
     h('span')))) : h('p', { class: 'muted small', text: empty });
   const tops = (label, items, prefix = '') => items.length ? h('div', null, h('div', { class: 'h3', text: label }),
     h('div', { class: 'tops' }, items.map((i) => h('span', { class: 'chip static', text: prefix + i.label + ' ' + i.n })))) : null;
@@ -2507,6 +2713,10 @@ async function generateDemo(onProgress) {
   const MID = ['Обычный рабочий день, много встреч.', 'Разбирал почту и документы.', 'Немного прибрался дома.', 'Съездил в магазин, приготовил ужин.', 'День прошёл ровно, без сюрпризов.', 'Работал из дома, вечером сериал.'];
   const NEG = ['Не выспался, весь день как в тумане.', 'Сорвался срок, пришлось задержаться.', 'Болела голова, рано лёг.', 'Пробки, опоздал на совещание.', 'Поругались по мелочи, неприятный осадок.', 'Навалилось сразу всё, ничего не успел.'];
   const FX = { sport: 'Утром пробежал пять километров.', walk: 'Прошёл пешком через весь район.', overwork: 'Засиделся на работе допоздна.', friends: 'Вечером встретились с друзьями.', family: 'Позвонил родителям, долго говорили.', trip: 'Выбрались за город.', sick: 'Температура, весь день под пледом.' };
+  const MORNING = ['Проснулся рано, выпил кофе в тишине.', 'Утро как утро: душ, завтрак, дорога.', 'Проспал будильник, собирался бегом.', 'Утром была пробежка вдоль реки.', 'Позавтракали вместе, никуда не спешили.'];
+  const EVE_POS = ['Вечером гуляли, болтали обо всём.', 'Вечер с книгой и чаем — то, что нужно.', 'Приготовили ужин вдвоём, очень уютно.'];
+  const EVE_MID = ['Вечером сериал и пораньше спать.', 'Вечер прошёл спокойно, разобрал дела на завтра.'];
+  const EVE_NEG = ['Вечером не было сил ни на что.', 'Долго не мог уснуть, мысли крутились.'];
   const TITLES = ['Первый снег', 'Поездка в Суздаль', 'День рождения мамы', 'Сдали проект', 'Начало отпуска', 'Концерт любимой группы', 'Прогулка по Коломенскому', 'Тихий вечер с книгой'];
   const MILESTONES = [[80, 'Начал новый проект'], [210, 'Отпуск на Алтае'], [330, 'Купил велосипед'], [470, 'Переезд в новую квартиру'], [600, 'Первый полумарафон'], [720, 'Свадьба друзей'], [830, 'Закончил курс английского'], [960, 'Новая должность'], [1030, 'Поездка в Калининград']];
   const PEOPLE = ['Аня', 'Мама', 'Папа', 'Сергей', 'Коллеги', 'Миша'];
@@ -2550,12 +2760,13 @@ async function generateDemo(onProgress) {
       const emoPool = mood >= 6 ? ['Радость', 'Благодарность', 'Вдохновение', 'Любовь', 'Гордость', 'Интерес'] : mood >= 4 ? ['Спокойствие', 'Интерес', 'Усталость', 'Благодарность'] : ['Усталость', 'Тревога', 'Грусть', 'Раздражение', 'Стресс', 'Злость', 'Одиночество'];
       const emotions = [];
       for (let k = 0, n = 1 + Math.floor(rnd() * 2); k < n; k++) addUnique(emotions, pick(emoPool));
-      const parts = [pick(mood >= 5 ? POS : mood >= 4 ? MID : NEG)];
-      for (const k of f) if (FX[k] && chance(0.5)) parts.push(FX[k]);
-      if (chance(0.4)) parts.push(pick(mood >= 5 ? POS : MID));
+      const fx = f.filter((k) => FX[k] && chance(0.5)).map((k) => FX[k]);
+      const morning = fx.includes(FX.sport) ? FX.sport : chance(0.45) ? pick(MORNING) : '';
+      const afternoon = [pick(mood >= 5 ? POS : mood >= 4 ? MID : NEG), ...fx.filter((x) => x !== FX.sport && x !== FX.friends)].join(' ');
+      const evening = [fx.includes(FX.friends) ? FX.friends : '', chance(0.5) ? pick(mood >= 5 ? EVE_POS : mood >= 4 ? EVE_MID : EVE_NEG) : ''].filter(Boolean).join(' ');
       const e = blankEntry(d);
       Object.assign(e, { mood, emotions, tags: [...new Set(tags)], people: [...new Set(people)], factors: f, sleep: chance(0.85) ? sleep : null,
-        text: [...new Set(parts)].join(' '), title: ms ? ms[1] : (mood >= 6 && chance(0.35) ? pick(TITLES) : ''),
+        morning, afternoon, evening, title: ms ? ms[1] : (mood >= 6 && chance(0.35) ? pick(TITLES) : ''),
         milestone: !!ms, favorite: !!ms || (mood >= 6 && chance(0.06)),
         createdAt: date.getTime() + 20 * 3600e3, updatedAt: date.getTime() + 20 * 3600e3 });
       out.push(e);
