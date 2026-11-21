@@ -1,6 +1,6 @@
 // Офлайн-кеш. При ЛЮБОМ изменении файлов увеличь CACHE (app-v1 → app-v2),
 // иначе пользователь может долго видеть старую версию.
-const CACHE = 'diary-v3';
+const CACHE = 'diary-v4';
 
 // Все файлы приложения. Пути — только относительные (./...), без "/" в начале.
 const ASSETS = [
@@ -40,9 +40,13 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
 
   // Страница: сначала сеть (свежая версия), при плохой сети или офлайн — из кеша.
+  // cache: 'no-cache' — сверяемся с сервером, а не берём страницу из кеша браузера: GitHub Pages разрешает
+  // хранить её 10 минут, и без этого после «Обновить» могла остаться старая версия.
   if (req.mode === 'navigate') {
+    let net;
+    try { net = fetch(new Request(req, { cache: 'no-cache' })); } catch (e) { net = fetch(req); }
     event.respondWith(
-      withTimeout(fetch(req), 3000)
+      withTimeout(net, 3000)
         .then((res) => {
           if (res.ok) {
             const copy = res.clone();
