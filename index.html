@@ -166,35 +166,38 @@
 
   /* ---------- Настроение ---------- */
   /* Бегунок с лицом. Лицо всегда светлое (цвет настроения + белый), поэтому черты лица одного тёмного цвета в обеих темах. */
-  .mslider { display: flex; align-items: center; gap: 14px; }
+  .mslider { display: flex; align-items: center; gap: 12px; }
   .mslider .face { flex: none; filter: drop-shadow(0 6px 10px rgb(20 24 60 / .18)); }
   .ms-main { flex: 1; min-width: 0; }
-  .ms-cap { display: flex; align-items: center; gap: 8px; min-height: 44px; flex-wrap: wrap; }
-  .ms-val { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; }
-  .ms-label { font: 600 20px/1.2 var(--serif); }
-  .mslider.big .ms-label { font-size: 23px; }
-  .mslider.unset .ms-label { font: 400 17px/1.2 var(--sans); color: var(--muted); }
-  .ms-num { font: 600 20px/1.2 var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
-  .mslider.big .ms-num { font-size: 22px; }
-  .ms-steps { display: flex; gap: 6px; }
-  .ms-step { width: 44px; min-width: 44px; font-size: 22px; line-height: 1; touch-action: manipulation; }
+  .ms-val { display: flex; align-items: baseline; gap: 8px; min-height: 26px; flex-wrap: wrap; }
+  .ms-label { font: 600 18px/1.25 var(--serif); }
+  .mslider.unset .ms-label { font: 400 15px/1.3 var(--sans); color: var(--muted); }
+  .ms-num { font: 600 18px/1.25 var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
+  .ms-step { width: 44px; min-width: 44px; height: 36px; min-height: 36px; font-size: 22px; line-height: 1; touch-action: manipulation; }
   .ms-clear { min-height: 36px; padding: 0 8px; font-size: 14px; color: var(--muted); }
-  .ms-track { position: relative; height: 48px; touch-action: pan-y; cursor: pointer; -webkit-user-select: none; user-select: none; border-radius: 14px; }
+  .ms-track { position: relative; height: 44px; touch-action: pan-y; cursor: pointer; -webkit-user-select: none; user-select: none; border-radius: 14px; }
   .ms-track:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .ms-rail {
-    position: absolute; left: 18px; right: 18px; top: 50%; height: 10px; margin-top: -5px; border-radius: 5px;
+    position: absolute; left: 16px; right: 16px; top: 50%; height: 10px; margin-top: -5px; border-radius: 5px;
     background: linear-gradient(90deg, var(--m1), var(--m2), var(--m3), var(--m4), var(--m5), var(--m6), var(--m7));
   }
   .ms-rail i { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgb(255 255 255 / .8); }
   .ms-rail i.zero { width: 3px; height: 18px; margin: -9px 0 0 -1.5px; border-radius: 2px; background: var(--muted); }
   .ms-thumb {
-    position: absolute; top: 50%; left: calc(18px + var(--p, .5) * (100% - 36px)); width: 34px; height: 34px; margin: -17px 0 0 -17px;
+    position: absolute; top: 50%; left: calc(16px + var(--p, .5) * (100% - 32px)); width: 32px; height: 32px; margin: -16px 0 0 -16px;
     border-radius: 50%; background: var(--mcol, var(--surface)); border: 3px solid var(--surface);
     box-shadow: 0 2px 10px rgb(20 24 60 / .35); pointer-events: none;
   }
   .mslider.unset .ms-rail { opacity: .5; }
   .mslider.unset .ms-thumb { background: var(--surface); border: 2px dashed var(--muted); box-shadow: none; }
-  .ms-ends { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); padding: 0 6px; margin-top: -8px; font-variant-numeric: tabular-nums; }
+  .ms-ends { display: flex; justify-content: space-between; align-items: center; margin-top: -2px; }
+  /* Сводка «Настроение дня» */
+  .day-sum { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+  .day-sum .face { flex: none; filter: drop-shadow(0 4px 8px rgb(20 24 60 / .16)); }
+  .ds-cap { font-size: 14px; color: var(--muted); }
+  .ds-label { font: 600 21px/1.25 var(--serif); }
+  .day-sum.unset .ds-label { font: 500 17px/1.3 var(--sans); }
+  .ds-note { font-size: 14px; color: var(--muted); }
   .face .f-head { fill: color-mix(in oklab, var(--face, #bdb9ae) 60%, #ffffff); stroke: color-mix(in oklab, var(--face, #bdb9ae) 85%, #1c2033); stroke-width: 2; }
   .face .f-ink { fill: #262a45; }
   .face .f-line { fill: none; stroke: #262a45; stroke-width: 3.4; stroke-linecap: round; }
@@ -231,9 +234,10 @@
   .parts { display: grid; grid-template-columns: 1fr; gap: 10px; }
   @media (min-width: 640px) { .parts { grid-template-columns: repeat(3, 1fr); } }
   .part-tile {
-    display: flex; flex-direction: column; gap: 6px; text-align: left; border: 0; padding: 12px 14px 14px; min-height: 84px;
-    border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); min-width: 0;
+    display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; min-width: 0;
+    border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line);
   }
+  .part-tile .part-s { text-align: left; border: 0; background: var(--bg); border-radius: 12px; padding: 10px 12px; min-height: 44px; width: 100%; font: inherit; font-size: 15px; }
   .part-tile.now { box-shadow: inset 0 0 0 2px var(--ink); }
   .part-h { display: flex; align-items: center; gap: 8px; font: 600 17px var(--serif); color: var(--ink); }
   .part-h svg.i { width: 20px; height: 20px; color: var(--muted); }
@@ -249,7 +253,9 @@
   .part-block.now .e-text { box-shadow: inset 0 0 0 1.5px var(--ink); }
   .part-block.now .e-text:focus { box-shadow: inset 0 0 0 2px var(--ink); }
   .read-part { margin-top: 22px; }
-  .read-part .part-h { margin-bottom: -6px; }
+  .read-part .part-h { margin-bottom: -6px; flex-wrap: wrap; }
+  .part-mood { display: inline-flex; align-items: center; gap: 6px; font: 500 15px var(--sans); color: var(--muted); margin-left: 6px; }
+  .part-block .mslider { margin: 4px 0 10px; }
   .preview {
     display: block; width: 100%; text-align: left; border: 0; padding: 14px 16px; border-radius: var(--radius);
     background: var(--surface); box-shadow: inset 0 0 0 1px var(--line);
@@ -489,7 +495,7 @@
   .gallery.read { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
   .gallery.read .gtile { aspect-ratio: 4 / 3; }
   .gtile.novideo { display: flex; align-items: center; justify-content: center; }
-  @media (max-width: 359px) { .mslider { gap: 10px; } .mslider .face { width: 64px; height: 64px; } .ms-label, .mslider.big .ms-label { font-size: 18px; } .ms-step { width: 40px; min-width: 40px; } }
+  @media (max-width: 359px) { .mslider { gap: 8px; } .mslider .face { width: 48px; height: 48px; } .ms-label, .ms-num { font-size: 16px; } .ms-step { width: 40px; min-width: 40px; } }
   #ask { width: min(420px, calc(100vw - 32px)); }
   .ask-text { margin: 0 0 18px; font-size: 17px; line-height: 1.45; }
   .btn.danger-fill { background: var(--danger); color: var(--on-ink); box-shadow: none; font-weight: 600; }
@@ -524,10 +530,10 @@
 
 /* ================= Настройки приложения ================= */
 const APP_ID = 'diary';
-const APP_VERSION = '1.2.1';      // повышай вместе с CACHE в sw.js
+const APP_VERSION = '1.3.0';      // повышай вместе с CACHE в sw.js
 const DB_VERSION = 1;             // структура IndexedDB (хранилища, индексы)
-const SCHEMA_VERSION = 3;         // форма данных; при изменении — шаг в migrateData()
-const ARCHIVE_FORMAT = 3;         // формат data.json в копии; старые форматы импорт читает всегда
+const SCHEMA_VERSION = 4;         // форма данных; при изменении — шаг в migrateData()
+const ARCHIVE_FORMAT = 4;         // формат data.json в копии; старые форматы импорт читает всегда
 const PREVIEW = !!window.__DIARY_PREVIEW__;   // превью-сборка для просмотра в Claude: только примеры, без установки
 const DEMO = PREVIEW || (() => { try { return localStorage.getItem(APP_ID + ':demo') === '1'; } catch (e) { return false; } })();
 const DB_NAME = DEMO ? 'diary-demo' : 'diary';
@@ -549,11 +555,13 @@ const MOODS = [null,
   { e: '😭', t: 'Ужасно' }, { e: '😢', t: 'Плохо' }, { e: '🙁', t: 'Так себе' }, { e: '😐', t: 'Нормально' },
   { e: '🙂', t: 'Хорошо' }, { e: '😄', t: 'Отлично' }, { e: '🤩', t: 'Восторг' }];
 // Запись дня делится на три окна. Поле text — общая запись из версий до 1.1: её не трогаем и показываем как «Запись».
+// У каждого окна своя оценка настроения (sk) от −50 до +50 — с версии 1.3.
 const PARTS = [
-  { key: 'morning', label: 'Утро', ask: 'Как началось утро?', icon: 'sunrise' },
-  { key: 'afternoon', label: 'День', ask: 'Что было днём?', icon: 'sun' },
-  { key: 'evening', label: 'Вечер', ask: 'Как прошёл вечер?', icon: 'moon' }];
+  { key: 'morning', sk: 'morningScore', label: 'Утро', of: 'утра', ask: 'Как началось утро?', icon: 'sunrise' },
+  { key: 'afternoon', sk: 'afternoonScore', label: 'День', of: 'дня', ask: 'Что было днём?', icon: 'sun' },
+  { key: 'evening', sk: 'eveningScore', label: 'Вечер', of: 'вечера', ask: 'Как прошёл вечер?', icon: 'moon' }];
 const TEXT_KEYS = ['text', 'morning', 'afternoon', 'evening'];
+const PART_SCORE_KEYS = PARTS.map((p) => p.sk);
 const DEFAULT_EMOTIONS = ['Радость', 'Спокойствие', 'Благодарность', 'Любовь', 'Гордость', 'Интерес', 'Вдохновение',
   'Усталость', 'Тревога', 'Грусть', 'Раздражение', 'Злость', 'Одиночество', 'Скука', 'Стресс'];
 const DEFAULT_FACTORS = [
@@ -744,7 +752,7 @@ let tagCounts = new Map(), peopleCounts = new Map();
 
 function blankEntry(date) {
   const now = Date.now();
-  return { id: uid(), date, title: '', text: '', morning: '', afternoon: '', evening: '', mood: null, score: null, emotions: [], tags: [], people: [], factors: [],
+  return { id: uid(), date, title: '', text: '', morning: '', afternoon: '', evening: '', mood: null, score: null, dayScore: null, morningScore: null, afternoonScore: null, eveningScore: null, emotions: [], tags: [], people: [], factors: [],
     sleep: null, media: [], favorite: false, milestone: false, createdAt: now, updatedAt: now };
 }
 function normEntry(raw) {
@@ -756,9 +764,28 @@ function normEntry(raw) {
   let sc = e.score != null && Number.isFinite(+e.score) ? Math.round(Math.max(SCORE_MIN, Math.min(SCORE_MAX, +e.score))) : null;
   if (lv == null) sc = null;
   else if (sc == null || levelOf(sc) !== lv) sc = scoreOfLevel(lv);
-  setScore(e, sc);
+  const normSc = (x) => x != null && x !== '' && Number.isFinite(+x) ? Math.round(Math.max(SCORE_MIN, Math.min(SCORE_MAX, +x))) : null;
+  for (const k of PART_SCORE_KEYS) e[k] = normSc(e[k]);
+  // У записей до версии 1.3 поля dayScore нет: их единственная оценка — за весь день. Она сохраняется как есть.
+  e.dayScore = 'dayScore' in raw ? normSc(raw.dayScore) : sc;
+  recomputeDay(e);
   for (const k of ['title', ...TEXT_KEYS]) e[k] = typeof e[k] === 'string' ? e[k] : '';
   return e;
+}
+// Настроение дня (score и уровень mood) — среднее отмеченных частей суток.
+// Если ни утро, ни день, ни вечер не отмечены — оценка за весь день из версий до 1.3 (dayScore).
+function dayWith(e, sk, x) {
+  const v = PART_SCORE_KEYS.map((k) => (k === sk ? x : e ? e[k] : null)).filter((y) => y != null);
+  return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : (e ? e.dayScore : null);
+}
+const recomputeDay = (e) => setScore(e, dayWith(e, null, null));
+const ratedParts = (e) => PARTS.filter((p) => e && e[p.sk] != null);
+// «среднее утра и вечера», «оценка утра», «за весь день»
+function dayNote(e) {
+  const r = ratedParts(e);
+  if (!r.length) return e && e.dayScore != null ? 'оценка за весь день' : '';
+  if (r.length === 1) return 'оценка ' + r[0].of;
+  return 'среднее ' + r.map((p) => p.of).join(r.length === 2 ? ' и ' : ', ').replace(/, (?=[^,]*$)/, ' и ');
 }
 // Весь текст записи: старая общая запись, затем утро, день и вечер.
 const bodyText = (e) => TEXT_KEYS.map((k) => e[k].trim()).filter(Boolean).join('\n\n');
@@ -809,7 +836,13 @@ async function migrateData(from) {
     if (entries.size) await idb.putMany('entries', [...entries.values()]);
     v = 3;
   }
-  // Следующий шаг: if (v < 4) { …; v = 4; }
+  // 3 → 4 (версия 1.3): своя оценка у утра, дня и вечера. normEntry перенёс прежнюю оценку в dayScore («за весь день»),
+  // окна без оценок; настроение дня (score, mood) не изменилось. updatedAt не трогаем.
+  if (v < 4) {
+    if (entries.size) await idb.putMany('entries', [...entries.values()]);
+    v = 4;
+  }
+  // Следующий шаг: if (v < 5) { …; v = 5; }
   if (v !== from || !(await idb.get('meta', 'schemaVersion'))) await idb.put('meta', { key: 'schemaVersion', value: v });
 }
 const saveSettings = () => idb.put('meta', { key: 'settings', value: settings }).catch(storageError);
@@ -868,8 +901,8 @@ function mergeInto(a, b) {
   const aFirst = (a.createdAt || 0) <= (b.createdAt || 0);
   for (const k of TEXT_KEYS) a[k] = mergeText(a[k], b[k], aFirst);
   a.title = newer.title || older.title;
-  const ms = newer.mood != null ? newer : older;
-  setScore(a, ms.mood != null ? ms.score : null);
+  for (const k of [...PART_SCORE_KEYS, 'dayScore']) a[k] = newer[k] ?? older[k];
+  recomputeDay(a);
   a.sleep = newer.sleep ?? older.sleep;
   for (const k of ['emotions', 'tags', 'people']) for (const v of b[k]) addUnique(a[k], v);
   for (const f of b.factors) if (!a.factors.includes(f)) a.factors.push(f);
@@ -1151,7 +1184,7 @@ async function importFile(file, onProgress) {
     data = JSON.parse(await dj.text());
   }
   if (!data || data.app !== APP_ID || !Array.isArray(data.entries)) throw new Error('not-diary');
-  if ((Number(data.format) || 1) > ARCHIVE_FORMAT) throw new Error('newer-format');   // форматы 1–3 читаются: у format 1 окна пустые, у 1–2 score выводится из mood
+  if ((Number(data.format) || 1) > ARCHIVE_FORMAT) throw new Error('newer-format');   // форматы 1–4 читаются: у format 1 окна пустые, у 1–2 score выводится из mood, у 1–3 оценка — за весь день
   return mergeImport(data, zip, onProgress);
 }
 
@@ -1363,16 +1396,15 @@ function makeFace(size) {
 }
 function faceIcon(sc, size = 26) { const f = makeFace(size); f.set(sc); return f; }
 
-// Бегунок настроения от −50 до +50 (101 деление, 0 — посередине).
-// Свой, на pointer-событиях: у стандартного range на iPhone и iPad касание дорожки ничего не делает.
-// Пальцем точное число поймать трудно, поэтому рядом кнопки «−» и «+» с шагом 1 (удержание — быстрее).
-function moodSlider({ value = null, big = false, onInput, onCommit }) {
+// Бегунок настроения от −50 до +50 (101 деление, 0 — посередине). Свой, на pointer-событиях: у стандартного range
+// на iPhone и iPad касание дорожки ничего не делает. Под дорожкой кнопки «−» и «+» с шагом 1 (удержание — быстрее).
+function moodSlider({ value = null, size = 64, name = 'Настроение', onInput, onCommit }) {
   let v = value, committed = value, drag = null, commitTimer = 0;
-  const face = makeFace(big ? 96 : 78);
+  const face = makeFace(size);
   const label = h('div', { class: 'ms-label' }), num = h('div', { class: 'ms-num' });
-  const clearBtn = h('button', { class: 'btn ghost ms-clear', type: 'button', text: 'Сбросить', onclick: () => { v = null; paint(null); onInput && onInput(null); commitNow(); } });
+  const clearBtn = h('button', { class: 'btn ghost ms-clear', type: 'button', text: 'Сбросить', onclick: () => { set(null); commitNow(); } });
   const thumb = h('div', { class: 'ms-thumb' });
-  const track = h('div', { class: 'ms-track', role: 'slider', tabindex: '0', 'aria-label': 'Настроение от минус 50 до плюс 50', 'aria-valuemin': String(SCORE_MIN), 'aria-valuemax': String(SCORE_MAX) },
+  const track = h('div', { class: 'ms-track', role: 'slider', tabindex: '0', 'aria-label': name + ', от минус 50 до плюс 50', 'aria-valuemin': String(SCORE_MIN), 'aria-valuemax': String(SCORE_MAX) },
     h('div', { class: 'ms-rail' }, [0, 0.25, 0.5, 0.75, 1].map((q) => h('i', { class: q === 0.5 ? 'zero' : null, style: `left:${q * 100}%` }))), thumb);
   const stepBtn = (d, txt, aria) => {
     const b = h('button', { class: 'btn icon ms-step', type: 'button', 'aria-label': aria, text: txt });
@@ -1387,27 +1419,27 @@ function moodSlider({ value = null, big = false, onInput, onCommit }) {
     b.addEventListener('click', (ev) => { if (ev.detail === 0) nudge(d); });   // нажатие с клавиатуры
     return b;
   };
-  const minus = stepBtn(-1, '−', 'Минус 1'), plus = stepBtn(1, '+', 'Плюс 1');
-  const el = h('div', { class: 'mslider' + (big ? ' big' : '') }, face,
+  const el = h('div', { class: 'mslider' }, face,
     h('div', { class: 'ms-main' },
-      h('div', { class: 'ms-cap' }, h('div', { class: 'ms-val' }, label, num), h('div', { class: 'ms-steps' }, minus, plus)), track,
-      h('div', { class: 'ms-ends' }, h('span', { 'aria-hidden': 'true', text: '−50' }), clearBtn, h('span', { 'aria-hidden': 'true', text: '+50' }))));
+      h('div', { class: 'ms-val' }, label, num), track,
+      h('div', { class: 'ms-ends' }, stepBtn(-1, '−', name + ': минус 1'), clearBtn, stepBtn(1, '+', name + ': плюс 1'))));
   function paint(x) {
     face.set(x);
     el.classList.toggle('unset', x == null);
     track.style.setProperty('--p', x == null ? 0.5 : (x - SCORE_MIN) / (SCORE_MAX - SCORE_MIN));
     track.style.setProperty('--mcol', scoreColor(x));
-    label.textContent = x == null ? 'Передвиньте бегунок' : MOODS[levelOf(x)].t;
+    label.textContent = x == null ? 'от −50 до +50' : MOODS[levelOf(x)].t;
     num.textContent = x == null ? '' : fmtScore(x);
     clearBtn.style.visibility = x == null ? 'hidden' : 'visible';
     if (x != null) { track.setAttribute('aria-valuenow', x); track.setAttribute('aria-valuetext', MOODS[levelOf(x)].t + ', ' + fmtScore(x)); }
     else { track.removeAttribute('aria-valuenow'); track.setAttribute('aria-valuetext', 'не отмечено'); }
   }
-  const set = (x) => { v = x; paint(x); onInput && onInput(x); };
+  function set(x) { v = x; paint(x); onInput && onInput(x); }
   function commitNow() { clearTimeout(commitTimer); if (v !== committed) { committed = v; onCommit && onCommit(v); } }
   const commitSoon = () => { clearTimeout(commitTimer); commitTimer = setTimeout(commitNow, 600); };
-  function nudge(d) { set(v == null ? 0 : Math.max(SCORE_MIN, Math.min(SCORE_MAX, v + d))); commitSoon(); }
-  const valAt = (clientX) => { const r = track.getBoundingClientRect(); return Math.round(SCORE_MIN + clamp01((clientX - r.left - 18) / Math.max(1, r.width - 36)) * (SCORE_MAX - SCORE_MIN)); };
+  // Без оценки первое нажатие «−»/«+» или стрелки ставит 0; Home/End — сразу −50/+50.
+  function nudge(d) { set(v == null ? (Math.abs(d) >= 50 ? Math.sign(d) * SCORE_MAX : 0) : Math.max(SCORE_MIN, Math.min(SCORE_MAX, v + d))); commitSoon(); }
+  const valAt = (clientX) => { const r = track.getBoundingClientRect(); return Math.round(SCORE_MIN + clamp01((clientX - r.left - 16) / Math.max(1, r.width - 32)) * (SCORE_MAX - SCORE_MIN)); };
   track.addEventListener('pointerdown', (ev) => {
     if (ev.button > 0) return;
     clearTimeout(commitTimer);
@@ -1431,6 +1463,19 @@ function moodSlider({ value = null, big = false, onInput, onCommit }) {
     else if ((ev.key === 'Delete' || ev.key === 'Backspace') && v != null) { ev.preventDefault(); set(null); commitNow(); }
   });
   paint(v);
+  return el;
+}
+// Сводка «Настроение дня»: лицо, подпись, число и откуда оно (среднее утра и вечера / за весь день).
+function daySummary(e) {
+  const face = makeFace(46), label = h('div', { class: 'ds-label' }), note = h('div', { class: 'ds-note' });
+  const el = h('div', { class: 'day-sum', 'aria-live': 'polite' }, face, h('div', { class: 'ds-main' }, h('div', { class: 'ds-cap', text: 'Настроение дня' }), label, note));
+  el.update = (x, e2) => {
+    face.set(x);
+    el.classList.toggle('unset', x == null);
+    label.textContent = x == null ? 'Отметьте утро, день или вечер' : MOODS[levelOf(x)].t + ' ' + fmtScore(x);
+    note.textContent = x == null ? 'Оценкой дня станет их среднее' : dayNote(e2);
+  };
+  el.update(e && e.mood != null ? e.score : null, e);
   return el;
 }
 function thumbsRow(e, n = 3) {
@@ -1478,17 +1523,35 @@ function renderToday(v) {
       if (!todayDone) streakEl.append(' — запишите сегодня, чтобы её продолжить');
     } else streakEl.append('Начните серию: отметьте сегодняшний день');
   };
-  // Три окна дня: утро, день, вечер. Касание открывает запись сразу на нужном окне.
+  // Три окна дня: у каждого своё настроение (бегунок) и текст. Касание текста открывает запись на этом окне.
   const fillEntry = () => {
     const cur = byDate.get(t), now = currentPart();
     entryEl.replaceChildren();
     if (cur && cur.title.trim()) entryEl.append(h('button', { class: 'today-title', type: 'button', onclick: () => openEditor(t, { focus: 'title' }) }, cur.title));
     entryEl.append(h('div', { class: 'parts' }, PARTS.map((p) => {
       const txt = cur ? cur[p.key].trim() : '';
-      return h('button', { class: 'part-tile' + (p.key === now ? ' now' : '') + (txt ? ' filled' : ''), type: 'button',
-        'aria-label': p.label + (txt ? ': ' + firstSentence(txt, 80) : ' — добавить'), onclick: () => openEditor(t, { focus: p.key }) },
-        h('span', { class: 'part-h' }, icon(p.icon), h('span', { text: p.label }), p.key === now ? h('span', { class: 'now-badge', text: 'сейчас' }) : null),
-        h('span', { class: 'part-s' + (txt ? '' : ' blank'), text: txt || p.ask }));
+      const slider = moodSlider({ value: cur ? cur[p.sk] : null, size: 56, name: 'Настроение: ' + p.label.toLowerCase(),
+        onInput: (x) => {
+          const base = byDate.get(t), d = dayWith(base, p.sk, x);
+          sky.style.setProperty('--sky', skyColor(d));
+          summary.update(d, Object.assign({}, base || { dayScore: null }, { [p.sk]: x }));
+        },
+        onCommit: async (sc) => {
+          const e2 = byDate.get(t) || blankEntry(t);
+          e2[p.sk] = sc; recomputeDay(e2);
+          if (entries.has(e2.id) && isEmpty(e2)) await deleteEntry(e2);
+          else await saveEntry(e2);
+          const live = byDate.get(t);
+          summary.update(live && live.mood != null ? live.score : null, live);
+          sky.style.setProperty('--sky', skyColor(live && live.mood != null ? live.score : null));
+          fillStreak(); fillStrip();
+          toast(sc == null ? p.label + ': оценка снята' : p.label + ': ' + fmtScore(sc) + ' — сохранено');
+        } });
+      return h('div', { class: 'part-tile' + (p.key === now ? ' now' : '') + (txt ? ' filled' : '') },
+        h('div', { class: 'part-h' }, icon(p.icon), h('span', { text: p.label }), p.key === now ? h('span', { class: 'now-badge', text: 'сейчас' }) : null),
+        slider,
+        h('button', { class: 'part-s' + (txt ? '' : ' blank'), type: 'button', 'aria-label': p.label + (txt ? ': ' + firstSentence(txt, 80) : ' — написать'),
+          onclick: () => openEditor(t, { focus: p.key }) }, txt || p.ask + ' Коснитесь, чтобы написать.'));
     })));
     if (cur && cur.text.trim()) entryEl.append(h('button', { class: 'preview', type: 'button', onclick: () => openEditor(t, { focus: 'text' }) },
       h('div', { class: 't', text: 'Запись' }), h('div', { class: 's', text: cur.text })));
@@ -1507,21 +1570,12 @@ function renderToday(v) {
       h('span', { class: i === 0 ? 'today-mark' : null, text: WD_S[parseYmd(d).getDay()] })));
     }
   };
-  const slider = moodSlider({ value: e && e.mood != null ? e.score : null, big: true,
-    onInput: (x) => sky.style.setProperty('--sky', skyColor(x)),
-    onCommit: async (m) => {
-      const cur = byDate.get(t) || blankEntry(t);
-      setScore(cur, m);
-      if (entries.has(cur.id) && isEmpty(cur)) await deleteEntry(cur);
-      else await saveEntry(cur);
-      fillStreak(); fillEntry(); fillStrip();
-      toast(m ? 'Настроение сохранено' : 'Оценка снята');
-    } });
+  const summary = daySummary(e);
   const sky = h('section', { class: 'sky', style: `--sky: ${skyColor(e && e.mood != null ? e.score : null)}` },
     h('div', { class: 'top' },
       h('div', { class: 'date-hero' }, h('div', { class: 'd', text: fmtDate(t, false) }), h('div', { class: 'w', text: cap(weekday(t)) + ', ' + t.slice(0, 4) })),
       settingsBtn()),
-    streakEl, h('div', { class: 'ask', text: 'Как настроение?' }), slider, entryEl);
+    streakEl, summary, entryEl);
   fillStreak(); fillEntry(); fillStrip();
   put(v, sky, sysBanners(), backupBanner(), memoriesSection(),
     h('section', { class: 'section' }, h('h2', { text: 'Две недели' }),
@@ -1884,7 +1938,7 @@ function renderEntryView(e, s) {
   const body = h('div', { class: 'sheet-body' },
     dateBlock(e.date),
     (e.mood || e.emotions.length) ? h('div', { class: 'row', style: 'margin-top:14px' },
-      e.mood ? h('span', { class: 'pill', style: `--mc: ${entryColor(e)}` }, faceIcon(e.score, 28), moodText(e)) : null,
+      e.mood ? h('span', { class: 'pill', style: `--mc: ${entryColor(e)}`, title: dayNote(e) }, faceIcon(e.score, 28), moodText(e) + (ratedParts(e).length > 1 ? ' · среднее' : '')) : null,
       e.emotions.map((x) => h('span', { class: 'chip static', text: x }))) : null,
     e.title ? h('div', { class: 'read-title', text: e.title }) : null,
     readParts(e),
@@ -1899,12 +1953,15 @@ function renderEntryView(e, s) {
 }
 // Текст записи в просмотре: окна утро, день, вечер; старая общая запись — без заголовка, если окон нет.
 function readParts(e) {
-  const parts = PARTS.filter((p) => e[p.key].trim());
+  const parts = PARTS.filter((p) => e[p.key].trim() || e[p.sk] != null);
   const legacy = e.text.trim();
   if (!parts.length && !legacy) return null;
   if (!parts.length) return h('div', { class: 'read-text', text: e.text });
-  const sec = (ic, label, txt) => h('section', { class: 'read-part' }, h('div', { class: 'part-h' }, icon(ic), h('span', { text: label })), h('div', { class: 'read-text', text: txt }));
-  return h('div', null, legacy ? sec('book', 'Запись', e.text) : null, parts.map((p) => sec(p.icon, p.label, e[p.key])));
+  const sec = (ic, label, txt, sc) => h('section', { class: 'read-part' },
+    h('div', { class: 'part-h' }, icon(ic), h('span', { text: label }),
+      sc != null ? h('span', { class: 'part-mood' }, faceIcon(sc, 24), MOODS[levelOf(sc)].t + ' ' + fmtScore(sc)) : null),
+    txt.trim() ? h('div', { class: 'read-text', text: txt }) : null);
+  return h('div', null, legacy ? sec('book', 'Запись', e.text, null) : null, parts.map((p) => sec(p.icon, p.label, e[p.key], e[p.sk])));
 }
 async function confirmDelete(e) {
   if (!(await ask('Удалить запись за ' + fmtDate(e.date) + '? Фото, видео и голос этой записи тоже удалятся.', 'Удалить', true))) return;
@@ -2000,7 +2057,18 @@ function renderEditorInto(e, s, opts = {}) {
   } });
   dateInput.value = e.date;
 
-  const slider = moodSlider({ value: e.mood != null ? e.score : null, onCommit: (sc) => { setScore(e, sc); changed(); } });
+  // Сводка дня сверху; бегунки — в окнах утро, день, вечер.
+  const summary = daySummary(e);
+  const legacyMood = h('div');
+  const fillLegacyMood = () => {
+    legacyMood.replaceChildren();
+    if (e.dayScore == null) return;
+    legacyMood.append(h('div', { class: 'part-note row', style: 'margin-top:8px' },
+      h('span', { class: 'grow', text: (ratedParts(e).length ? 'Раньше за весь день стояло ' : 'За весь день стоит ') + fmtScore(e.dayScore) +
+        (ratedParts(e).length ? '. Теперь настроение дня — среднее отмеченных частей суток.' : ' — поставлено до версии 1.3. Отметьте утро, день или вечер, и настроением дня станет их среднее.') }),
+      h('button', { class: 'btn ghost', type: 'button', text: 'Убрать', onclick: () => { e.dayScore = null; recomputeDay(e); summary.update(e.mood != null ? e.score : null, e); fillLegacyMood(); changed(); } })));
+  };
+  fillLegacyMood();
 
   const emoList = [...settings.emotions];
   for (const x of e.emotions) if (!emoList.some((y) => norm(y) === norm(x))) emoList.push(x);
@@ -2021,17 +2089,20 @@ function renderEditorInto(e, s, opts = {}) {
   const areas = {};
   const now = e.date === todayStr() ? currentPart() : null;
   const autoGrow = (ta) => { ta.style.height = 'auto'; ta.style.height = Math.max(120, ta.scrollHeight + 2) + 'px'; };
-  const partBlock = (key, label, ask, ic, note) => {
+  const partBlock = (key, label, ask, ic, note, sk) => {
     const ta = h('textarea', { class: 'e-text part', 'aria-label': label, placeholder: ask });
     ta.value = e[key];
     ta.addEventListener('input', () => { e[key] = ta.value; autoGrow(ta); changed(); });
     areas[key] = ta;
+    const slider = sk ? moodSlider({ value: e[sk], size: 56, name: 'Настроение: ' + label.toLowerCase(),
+      onInput: (x) => summary.update(dayWith(e, sk, x), Object.assign({}, e, { [sk]: x })),
+      onCommit: (sc) => { e[sk] = sc; recomputeDay(e); summary.update(e.mood != null ? e.score : null, e); fillLegacyMood(); changed(); } }) : null;
     return h('div', { class: 'e-block part-block' + (key === now ? ' now' : '') },
       h('div', { class: 'part-h', onclick: () => ta.focus() }, icon(ic), h('span', { text: label }), key === now ? h('span', { class: 'now-badge', text: 'сейчас' }) : null),
-      note ? h('p', { class: 'part-note', text: note }) : null, ta);
+      note ? h('p', { class: 'part-note', text: note }) : null, slider, ta);
   };
   const legacyBlock = e.text.trim() ? partBlock('text', 'Запись', '', 'book', 'Сделана до того, как запись дня разделилась на утро, день и вечер. Её можно оставить здесь или перенести в нужное окно.') : null;
-  const partBlocks = PARTS.map((p) => partBlock(p.key, p.label, p.ask, p.icon));
+  const partBlocks = PARTS.map((p) => partBlock(p.key, p.label, p.ask, p.icon, null, p.sk));
 
   const media = h('div');
   const refreshMedia = () => { media.replaceChildren(mediaBlock(e, true, refreshMedia) || ''); hydrateThumbs(media); };
@@ -2086,7 +2157,7 @@ function renderEditorInto(e, s, opts = {}) {
     h('div', { class: 'title', text: 'Запись' }), starBtn(e), flagBtn(e));
   const body = h('div', { class: 'sheet-body' },
     h('label', { class: 'e-date' }, dateD, dateW, dateInput),
-    block('Настроение', slider),
+    block(null, summary, legacyMood),
     block('Эмоции', emo),
     block(null, title),
     legacyBlock, partBlocks,
@@ -2682,6 +2753,11 @@ function renderStats(v) {
   if (sl.some((a) => a.length >= 3)) add('Сон и настроение', 'Среднее настроение в пунктах в зависимости от сна накануне', (p, w) => devChart(p, w, {
     title: 'Сон и настроение', labels: ['< 6 ч', '6–7 ч', '7–8 ч', '8+ ч'], values: sl.map((a) => a.length ? avgOf(a) : null), counts: sl.map((a) => a.length) }));
 
+  // 5б. Утро, день, вечер
+  const tod = PARTS.map((p) => list.map((e) => e[p.sk]).filter((x) => x != null));
+  if (tod.some((a) => a.length >= 3)) add('Утро, день, вечер', 'Среднее настроение в пунктах по времени суток; выше 0 — лучше нейтрального', (p, w) => devChart(p, w, {
+    title: 'Настроение по времени суток', labels: PARTS.map((x) => x.label), values: tod.map((a) => a.length ? avgOf(a) : null), counts: tod.map((a) => a.length) }));
+
   // 6. Эмоции
   const em = countTop(list, (e) => e.emotions, 10);
   if (em.length) addNode('Эмоции', 'Сколько дней отмечена каждая эмоция', freqRows(em));
@@ -2782,7 +2858,13 @@ async function generateDemo(onProgress) {
       const eff = { sport: 0.5, walk: 0.3, overwork: -0.8, dayoff: 0.4, friends: 0.7, family: 0.3, trip: 0.9, sick: -1.7, alcohol: -0.2, screen: -0.3 };
       for (const k of f) x += eff[k];
       if (ms) x += 1.5;
-      const score = Math.max(SCORE_MIN, Math.min(SCORE_MAX, Math.round((x - 4) * 50 / 3 + (rnd() - 0.5) * 10)));
+      const base = (x - 4) * 50 / 3, cl = (y) => Math.max(SCORE_MIN, Math.min(SCORE_MAX, Math.round(y)));
+      // утро чуть ниже, вечер чуть выше — чтобы на графике «Утро, день, вечер» была разница
+      const pm = chance(0.8) ? cl(base - 6 + (rnd() - 0.5) * 22) : null;
+      const pa = chance(0.85) || pm == null ? cl(base + (rnd() - 0.5) * 22) : null;
+      const pe = chance(0.75) ? cl(base + 6 + (rnd() - 0.5) * 22) : null;
+      const pv = [pm, pa, pe].filter((y) => y != null);
+      const score = Math.round(pv.reduce((a2, b2) => a2 + b2, 0) / pv.length);
       const mood = levelOf(score);
       const tags = [];
       if (!weekend && chance(0.5)) tags.push('работа');
@@ -2804,7 +2886,7 @@ async function generateDemo(onProgress) {
       const afternoon = [pick(mood >= 5 ? POS : mood >= 4 ? MID : NEG), ...fx.filter((x) => x !== FX.sport && x !== FX.friends)].join(' ');
       const evening = [fx.includes(FX.friends) ? FX.friends : '', chance(0.5) ? pick(mood >= 5 ? EVE_POS : mood >= 4 ? EVE_MID : EVE_NEG) : ''].filter(Boolean).join(' ');
       const e = blankEntry(d);
-      Object.assign(e, { mood, score, emotions, tags: [...new Set(tags)], people: [...new Set(people)], factors: f, sleep: chance(0.85) ? sleep : null,
+      Object.assign(e, { mood, score, dayScore: null, morningScore: pm, afternoonScore: pa, eveningScore: pe, emotions, tags: [...new Set(tags)], people: [...new Set(people)], factors: f, sleep: chance(0.85) ? sleep : null,
         morning, afternoon, evening, title: ms ? ms[1] : (mood >= 6 && chance(0.35) ? pick(TITLES) : ''),
         milestone: !!ms, favorite: !!ms || (mood >= 6 && chance(0.06)),
         createdAt: date.getTime() + 20 * 3600e3, updatedAt: date.getTime() + 20 * 3600e3 });
