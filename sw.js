@@ -1,6 +1,6 @@
 // Офлайн-кеш. При ЛЮБОМ изменении файлов увеличь CACHE (app-v1 → app-v2),
 // иначе пользователь может долго видеть старую версию.
-const CACHE = 'diary-v2';
+const CACHE = 'diary-v3';
 
 // Все файлы приложения. Пути — только относительные (./...), без "/" в начале.
 const ASSETS = [
@@ -15,7 +15,8 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
+  // cache: 'reload' — берём файлы прямо с сервера, а не из кеша браузера (GitHub Pages разрешает ему хранить их 10 минут).
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', (event) => {

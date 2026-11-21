@@ -169,12 +169,16 @@
   .mslider { display: flex; align-items: center; gap: 14px; }
   .mslider .face { flex: none; filter: drop-shadow(0 6px 10px rgb(20 24 60 / .18)); }
   .ms-main { flex: 1; min-width: 0; }
-  .ms-cap { display: flex; align-items: baseline; gap: 8px; min-height: 30px; }
+  .ms-cap { display: flex; align-items: center; gap: 8px; min-height: 44px; flex-wrap: wrap; }
+  .ms-val { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; }
   .ms-label { font: 600 20px/1.2 var(--serif); }
   .mslider.big .ms-label { font-size: 23px; }
   .mslider.unset .ms-label { font: 400 17px/1.2 var(--sans); color: var(--muted); }
-  .ms-num { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
-  .ms-clear { margin: -8px -10px -8px auto; padding: 0 10px; font-size: 14px; color: var(--muted); }
+  .ms-num { font: 600 20px/1.2 var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); }
+  .mslider.big .ms-num { font-size: 22px; }
+  .ms-steps { display: flex; gap: 6px; }
+  .ms-step { width: 44px; min-width: 44px; font-size: 22px; line-height: 1; touch-action: manipulation; }
+  .ms-clear { min-height: 36px; padding: 0 8px; font-size: 14px; color: var(--muted); }
   .ms-track { position: relative; height: 48px; touch-action: pan-y; cursor: pointer; -webkit-user-select: none; user-select: none; border-radius: 14px; }
   .ms-track:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .ms-rail {
@@ -182,6 +186,7 @@
     background: linear-gradient(90deg, var(--m1), var(--m2), var(--m3), var(--m4), var(--m5), var(--m6), var(--m7));
   }
   .ms-rail i { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: rgb(255 255 255 / .8); }
+  .ms-rail i.zero { width: 3px; height: 18px; margin: -9px 0 0 -1.5px; border-radius: 2px; background: var(--muted); }
   .ms-thumb {
     position: absolute; top: 50%; left: calc(18px + var(--p, .5) * (100% - 36px)); width: 34px; height: 34px; margin: -17px 0 0 -17px;
     border-radius: 50%; background: var(--mcol, var(--surface)); border: 3px solid var(--surface);
@@ -189,7 +194,7 @@
   }
   .mslider.unset .ms-rail { opacity: .5; }
   .mslider.unset .ms-thumb { background: var(--surface); border: 2px dashed var(--muted); box-shadow: none; }
-  .ms-ends { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); padding: 0 6px; margin-top: -6px; }
+  .ms-ends { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); padding: 0 6px; margin-top: -8px; font-variant-numeric: tabular-nums; }
   .face .f-head { fill: color-mix(in oklab, var(--face, #bdb9ae) 60%, #ffffff); stroke: color-mix(in oklab, var(--face, #bdb9ae) 85%, #1c2033); stroke-width: 2; }
   .face .f-ink { fill: #262a45; }
   .face .f-line { fill: none; stroke: #262a45; stroke-width: 3.4; stroke-linecap: round; }
@@ -292,6 +297,7 @@
   .item .day .w { font-size: 13px; color: var(--muted); margin-top: 4px; }
   .item .top { display: flex; align-items: flex-start; gap: 8px; min-height: 24px; }
   .item .top .e { font-size: 20px; line-height: 1.2; }
+  .item .top .sc, .rank .sc { font-size: 14px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.7; }
   .item .top .t { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
   .item .flags { padding-top: 3px; }
   .item .flags { display: flex; gap: 4px; color: var(--muted); }
@@ -483,7 +489,7 @@
   .gallery.read { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; }
   .gallery.read .gtile { aspect-ratio: 4 / 3; }
   .gtile.novideo { display: flex; align-items: center; justify-content: center; }
-  @media (max-width: 359px) { .mslider { gap: 10px; } .mslider .face { width: 64px; height: 64px; } }
+  @media (max-width: 359px) { .mslider { gap: 10px; } .mslider .face { width: 64px; height: 64px; } .ms-label, .mslider.big .ms-label { font-size: 18px; } .ms-step { width: 40px; min-width: 40px; } }
   #ask { width: min(420px, calc(100vw - 32px)); }
   .ask-text { margin: 0 0 18px; font-size: 17px; line-height: 1.45; }
   .btn.danger-fill { background: var(--danger); color: var(--on-ink); box-shadow: none; font-weight: 600; }
@@ -518,14 +524,27 @@
 
 /* ================= Настройки приложения ================= */
 const APP_ID = 'diary';
-const APP_VERSION = '1.1.0';      // повышай вместе с CACHE в sw.js
+const APP_VERSION = '1.2.0';      // повышай вместе с CACHE в sw.js
 const DB_VERSION = 1;             // структура IndexedDB (хранилища, индексы)
-const SCHEMA_VERSION = 2;         // форма данных; при изменении — шаг в migrateData()
-const ARCHIVE_FORMAT = 2;         // формат data.json в копии; старые форматы импорт читает всегда
+const SCHEMA_VERSION = 3;         // форма данных; при изменении — шаг в migrateData()
+const ARCHIVE_FORMAT = 3;         // формат data.json в копии; старые форматы импорт читает всегда
 const PREVIEW = !!window.__DIARY_PREVIEW__;   // превью-сборка для просмотра в Claude: только примеры, без установки
 const DEMO = PREVIEW || (() => { try { return localStorage.getItem(APP_ID + ':demo') === '1'; } catch (e) { return false; } })();
 const DB_NAME = DEMO ? 'diary-demo' : 'diary';
 
+// Настроение: score — целое от −50 до +50 (основное значение с версии 1.2).
+// mood — уровень 1…7, всегда выводится из score: по нему цвета, смайлики, фильтры и старые версии приложения.
+const SCORE_MIN = -50, SCORE_MAX = 50;
+const levelOf = (sc) => Math.min(7, Math.max(1, Math.round(sc * 3 / 50) + 4));   // −50…−42 → 1, −8…+8 → 4, +42…+50 → 7
+const scoreOfLevel = (m) => Math.round((m - 4) * 50 / 3);                         // 1 → −50, 4 → 0, 7 → +50
+const fmtScore = (sc) => sc > 0 ? '+' + sc : sc < 0 ? '−' + (-sc) : '0';
+// Средние и разницы в пунктах: до 10 — с одним знаком после запятой.
+const fmtPts = (x, signed = true) => {
+  if (x == null || isNaN(x)) return '—';
+  const a = Math.abs(x), t = a < 9.95 ? a.toFixed(1).replace('.', ',').replace(',0', '') : String(Math.round(a));
+  return (x < 0 && t !== '0' ? '−' : signed && x > 0 && t !== '0' ? '+' : '') + t;
+};
+function setScore(e, sc) { e.score = sc == null ? null : Math.round(Math.max(SCORE_MIN, Math.min(SCORE_MAX, sc))); e.mood = e.score == null ? null : levelOf(e.score); }
 const MOODS = [null,
   { e: '😭', t: 'Ужасно' }, { e: '😢', t: 'Плохо' }, { e: '🙁', t: 'Так себе' }, { e: '😐', t: 'Нормально' },
   { e: '🙂', t: 'Хорошо' }, { e: '😄', t: 'Отлично' }, { e: '🤩', t: 'Восторг' }];
@@ -725,14 +744,19 @@ let tagCounts = new Map(), peopleCounts = new Map();
 
 function blankEntry(date) {
   const now = Date.now();
-  return { id: uid(), date, title: '', text: '', morning: '', afternoon: '', evening: '', mood: null, emotions: [], tags: [], people: [], factors: [],
+  return { id: uid(), date, title: '', text: '', morning: '', afternoon: '', evening: '', mood: null, score: null, emotions: [], tags: [], people: [], factors: [],
     sleep: null, media: [], favorite: false, milestone: false, createdAt: now, updatedAt: now };
 }
 function normEntry(raw) {
   const e = Object.assign(blankEntry(raw.date), raw);
   for (const k of ['emotions', 'tags', 'people', 'factors', 'media']) if (!Array.isArray(e[k])) e[k] = [];
   e.media = e.media.filter((m) => m && m.id).map((m) => ({ id: m.id, kind: m.kind, duration: m.duration || 0 }));
-  if (e.mood != null) e.mood = Math.min(7, Math.max(1, Math.round(e.mood)));
+  // Настроение. Если уровень mood не совпадает со score — запись правили в старой версии (она меняет только mood): верим mood.
+  let lv = e.mood != null && Number.isFinite(+e.mood) ? Math.min(7, Math.max(1, Math.round(+e.mood))) : null;
+  let sc = e.score != null && Number.isFinite(+e.score) ? Math.round(Math.max(SCORE_MIN, Math.min(SCORE_MAX, +e.score))) : null;
+  if (lv == null) sc = null;
+  else if (sc == null || levelOf(sc) !== lv) sc = scoreOfLevel(lv);
+  setScore(e, sc);
   for (const k of ['title', ...TEXT_KEYS]) e[k] = typeof e[k] === 'string' ? e[k] : '';
   return e;
 }
@@ -779,7 +803,13 @@ async function migrateData(from) {
     if (entries.size) await idb.putMany('entries', [...entries.values()]);   // normEntry уже добавил пустые поля
     v = 2;
   }
-  // Следующий шаг: if (v < 3) { …; v = 3; }
+  // 2 → 3 (версия 1.2): настроение от −50 до +50. normEntry уже перевёл уровни: 1 → −50, 2 → −33, 3 → −17, 4 → 0,
+  // 5 → +17, 6 → +33, 7 → +50; mood (уровень) не изменился. Сохраняем score в базу, updatedAt не трогаем.
+  if (v < 3) {
+    if (entries.size) await idb.putMany('entries', [...entries.values()]);
+    v = 3;
+  }
+  // Следующий шаг: if (v < 4) { …; v = 4; }
   if (v !== from || !(await idb.get('meta', 'schemaVersion'))) await idb.put('meta', { key: 'schemaVersion', value: v });
 }
 const saveSettings = () => idb.put('meta', { key: 'settings', value: settings }).catch(storageError);
@@ -838,7 +868,8 @@ function mergeInto(a, b) {
   const aFirst = (a.createdAt || 0) <= (b.createdAt || 0);
   for (const k of TEXT_KEYS) a[k] = mergeText(a[k], b[k], aFirst);
   a.title = newer.title || older.title;
-  a.mood = newer.mood ?? older.mood;
+  const ms = newer.mood != null ? newer : older;
+  setScore(a, ms.mood != null ? ms.score : null);
   a.sleep = newer.sleep ?? older.sleep;
   for (const k of ['emotions', 'tags', 'people']) for (const v of b[k]) addUnique(a[k], v);
   for (const f of b.factors) if (!a.factors.includes(f)) a.factors.push(f);
@@ -1120,7 +1151,7 @@ async function importFile(file, onProgress) {
     data = JSON.parse(await dj.text());
   }
   if (!data || data.app !== APP_ID || !Array.isArray(data.entries)) throw new Error('not-diary');
-  if ((Number(data.format) || 1) > ARCHIVE_FORMAT) throw new Error('newer-format');   // format 1 и 2 читаются; поля утро/день/вечер у format 1 просто пустые
+  if ((Number(data.format) || 1) > ARCHIVE_FORMAT) throw new Error('newer-format');   // форматы 1–3 читаются: у format 1 окна пустые, у 1–2 score выводится из mood
   return mergeImport(data, zip, onProgress);
 }
 
@@ -1284,7 +1315,7 @@ function sysBanners() {
 
 /* ---------- Общие элементы ---------- */
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
-// Цвет для дробного настроения 1…7 — смесь двух соседних цветов шкалы (бегунок двигается плавно).
+// Цвет для дробного уровня 1…7 — смесь двух соседних цветов шкалы.
 function moodColor(v) {
   if (v == null) return 'var(--surface-2)';
   v = Math.max(1, Math.min(7, v));
@@ -1293,10 +1324,14 @@ function moodColor(v) {
   if (t > 0.98) return `var(--m${i + 1})`;
   return `color-mix(in oklab, var(--m${i}) ${Math.round((1 - t) * 100)}%, var(--m${i + 1}))`;
 }
-const skyColor = (m) => moodColor(m);
+// Цвет настроения по score −50…+50: плавный, без ступенек.
+const scoreColor = (sc) => sc == null ? 'var(--surface-2)' : moodColor(1 + (sc - SCORE_MIN) / (SCORE_MAX - SCORE_MIN) * 6);
+const entryColor = (e) => scoreColor(e && e.mood != null ? e.score : null);
+const skyColor = (sc) => scoreColor(sc);
 const currentPart = () => { const hr = new Date().getHours(); return hr >= 5 && hr < 12 ? 'morning' : hr >= 12 && hr < 18 ? 'afternoon' : 'evening'; };
+const moodText = (e) => MOODS[e.mood].t + ' · ' + fmtScore(e.score);
 
-// Лицо настроения: брови, глаза, рот, румянец и слеза плавно меняются от 1 (грустно) до 7 (восторг).
+// Лицо настроения по score −50…+50: брови, глаза, рот, румянец и слеза меняются плавно.
 function makeFace(size) {
   const svg = S('svg', { viewBox: '0 0 100 100', width: size, height: size, class: 'face', 'aria-hidden': 'true' });
   const head = S('circle', { cx: 50, cy: 50, r: 46, class: 'f-head' });
@@ -1306,11 +1341,11 @@ function makeFace(size) {
   const browL = S('path', { class: 'f-line' }), browR = S('path', { class: 'f-line' });
   const mouth = S('path', { class: 'f-mouth' });
   svg.append(head, cheekL, cheekR, eyeL, eyeR, tear, browL, browR, mouth);
-  svg.set = (v) => {
-    const unset = v == null, x = unset ? 4 : Math.max(1, Math.min(7, v));
-    const s = (x - 1) / 6, k = (s - 0.5) * 2, sad = clamp01(-k), happy = clamp01(k);
+  svg.set = (sc) => {
+    const unset = sc == null, x = unset ? 0 : Math.max(SCORE_MIN, Math.min(SCORE_MAX, sc));
+    const s = (x - SCORE_MIN) / (SCORE_MAX - SCORE_MIN), k = (s - 0.5) * 2, sad = clamp01(-k), happy = clamp01(k);
     svg.classList.toggle('unset', unset);
-    svg.style.setProperty('--face', moodColor(x));
+    svg.style.setProperty('--face', scoreColor(x));
     const squint = clamp01((s - 0.72) / 0.28);
     for (const e of [eyeL, eyeR]) { e.setAttribute('ry', (5.6 - squint * 3.3).toFixed(2)); e.setAttribute('cy', (44 + squint * 1.2 + sad * 1.5).toFixed(2)); }
     const by = 32 - happy * 3, inner = by - sad * 7, outer = by + sad * 2.5, arch = Math.min(inner, outer) - 1.5 - happy * 2.5;
@@ -1326,81 +1361,74 @@ function makeFace(size) {
   };
   return svg;
 }
-function faceIcon(v, size = 26) { const f = makeFace(size); f.set(v); return f; }
+function faceIcon(sc, size = 26) { const f = makeFace(size); f.set(sc); return f; }
 
-// Бегунок настроения. Свой, на pointer-событиях: у стандартного range на iPhone и iPad
-// касание дорожки ничего не делает, а здесь можно и коснуться, и тянуть.
-// Пока тянешь — значение дробное и лицо меняется плавно; при отпускании встаёт на ближайшее целое 1…7.
+// Бегунок настроения от −50 до +50 (101 деление, 0 — посередине).
+// Свой, на pointer-событиях: у стандартного range на iPhone и iPad касание дорожки ничего не делает.
+// Пальцем точное число поймать трудно, поэтому рядом кнопки «−» и «+» с шагом 1 (удержание — быстрее).
 function moodSlider({ value = null, big = false, onInput, onCommit }) {
-  let v = value, committed = value, drag = null, anim = 0;
+  let v = value, committed = value, drag = null, commitTimer = 0;
   const face = makeFace(big ? 96 : 78);
   const label = h('div', { class: 'ms-label' }), num = h('div', { class: 'ms-num' });
-  const clearBtn = h('button', { class: 'btn ghost ms-clear', type: 'button', text: 'Сбросить', onclick: () => commit(null) });
+  const clearBtn = h('button', { class: 'btn ghost ms-clear', type: 'button', text: 'Сбросить', onclick: () => { v = null; paint(null); onInput && onInput(null); commitNow(); } });
   const thumb = h('div', { class: 'ms-thumb' });
-  const track = h('div', { class: 'ms-track', role: 'slider', tabindex: '0', 'aria-label': 'Настроение', 'aria-valuemin': '1', 'aria-valuemax': '7' },
-    h('div', { class: 'ms-rail' }, [1, 2, 3, 4, 5, 6, 7].map((i) => h('i', { style: `left:${((i - 1) / 6 * 100).toFixed(3)}%` }))), thumb);
+  const track = h('div', { class: 'ms-track', role: 'slider', tabindex: '0', 'aria-label': 'Настроение от минус 50 до плюс 50', 'aria-valuemin': String(SCORE_MIN), 'aria-valuemax': String(SCORE_MAX) },
+    h('div', { class: 'ms-rail' }, [0, 0.25, 0.5, 0.75, 1].map((q) => h('i', { class: q === 0.5 ? 'zero' : null, style: `left:${q * 100}%` }))), thumb);
+  const stepBtn = (d, txt, aria) => {
+    const b = h('button', { class: 'btn icon ms-step', type: 'button', 'aria-label': aria, text: txt });
+    let hold = 0, rep = 0;
+    const stop = () => { clearTimeout(hold); clearInterval(rep); hold = rep = 0; };
+    b.addEventListener('pointerdown', (ev) => {
+      if (ev.button > 0) return;
+      ev.preventDefault(); nudge(d);
+      hold = setTimeout(() => { rep = setInterval(() => nudge(d), 70); }, 420);
+    });
+    for (const t of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(t, stop);
+    b.addEventListener('click', (ev) => { if (ev.detail === 0) nudge(d); });   // нажатие с клавиатуры
+    return b;
+  };
+  const minus = stepBtn(-1, '−', 'Минус 1'), plus = stepBtn(1, '+', 'Плюс 1');
   const el = h('div', { class: 'mslider' + (big ? ' big' : '') }, face,
     h('div', { class: 'ms-main' },
-      h('div', { class: 'ms-cap' }, label, num, clearBtn), track,
-      h('div', { class: 'ms-ends', 'aria-hidden': 'true' }, h('span', { text: 'грустно' }), h('span', { text: 'отлично' }))));
-  const paint = (x) => {
+      h('div', { class: 'ms-cap' }, h('div', { class: 'ms-val' }, label, num), h('div', { class: 'ms-steps' }, minus, plus)), track,
+      h('div', { class: 'ms-ends' }, h('span', { 'aria-hidden': 'true', text: '−50' }), clearBtn, h('span', { 'aria-hidden': 'true', text: '+50' }))));
+  function paint(x) {
     face.set(x);
     el.classList.toggle('unset', x == null);
-    track.style.setProperty('--p', x == null ? 0.5 : (x - 1) / 6);
-    track.style.setProperty('--mcol', moodColor(x));
-    const r = x == null ? null : Math.round(x);
-    label.textContent = r ? MOODS[r].t : 'Передвиньте бегунок';
-    num.textContent = r ? r + ' из 7' : '';
-    clearBtn.hidden = committed == null || drag != null;
-    if (r) { track.setAttribute('aria-valuenow', r); track.setAttribute('aria-valuetext', MOODS[r].t + ', ' + r + ' из 7'); }
+    track.style.setProperty('--p', x == null ? 0.5 : (x - SCORE_MIN) / (SCORE_MAX - SCORE_MIN));
+    track.style.setProperty('--mcol', scoreColor(x));
+    label.textContent = x == null ? 'Передвиньте бегунок' : MOODS[levelOf(x)].t;
+    num.textContent = x == null ? '' : fmtScore(x);
+    clearBtn.style.visibility = x == null ? 'hidden' : 'visible';
+    if (x != null) { track.setAttribute('aria-valuenow', x); track.setAttribute('aria-valuetext', MOODS[levelOf(x)].t + ', ' + fmtScore(x)); }
     else { track.removeAttribute('aria-valuenow'); track.setAttribute('aria-valuetext', 'не отмечено'); }
-  };
-  const set = (x) => { v = x; paint(x); onInput && onInput(x); };
-  const valAt = (clientX) => { const r = track.getBoundingClientRect(); return 1 + clamp01((clientX - r.left - 18) / Math.max(1, r.width - 36)) * 6; };
-  function commit(r) {
-    cancelAnimationFrame(anim);
-    const changed = r !== committed;
-    committed = r;
-    if (r == null) set(null);
-    else {
-      const from = v == null ? r : v, t0 = performance.now();
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const step = (now) => {
-        const q = reduce ? 1 : Math.min(1, (now - t0) / 170);
-        set(from + (r - from) * (1 - Math.pow(1 - q, 3)));
-        if (q < 1) anim = requestAnimationFrame(step); else set(r);
-      };
-      anim = requestAnimationFrame(step);
-    }
-    if (changed) onCommit && onCommit(r);
   }
+  const set = (x) => { v = x; paint(x); onInput && onInput(x); };
+  function commitNow() { clearTimeout(commitTimer); if (v !== committed) { committed = v; onCommit && onCommit(v); } }
+  const commitSoon = () => { clearTimeout(commitTimer); commitTimer = setTimeout(commitNow, 600); };
+  function nudge(d) { set(v == null ? 0 : Math.max(SCORE_MIN, Math.min(SCORE_MAX, v + d))); commitSoon(); }
+  const valAt = (clientX) => { const r = track.getBoundingClientRect(); return Math.round(SCORE_MIN + clamp01((clientX - r.left - 18) / Math.max(1, r.width - 36)) * (SCORE_MAX - SCORE_MIN)); };
   track.addEventListener('pointerdown', (ev) => {
     if (ev.button > 0) return;
-    cancelAnimationFrame(anim);
+    clearTimeout(commitTimer);
     drag = { id: ev.pointerId, start: v };
     try { track.setPointerCapture(ev.pointerId); } catch (e) {}
     set(valAt(ev.clientX));
   });
-  track.addEventListener('pointermove', (ev) => { if (drag && ev.pointerId === drag.id) set(valAt(ev.clientX)); });
+  track.addEventListener('pointermove', (ev) => { if (drag && ev.pointerId === drag.id) { const x = valAt(ev.clientX); if (x !== v) set(x); } });
   track.addEventListener('pointerup', (ev) => {
     if (!drag || ev.pointerId !== drag.id) return;
     drag = null;
-    commit(Math.round(valAt(ev.clientX)));
+    set(valAt(ev.clientX)); commitNow();
   });
   // Страницу начали прокручивать, а не двигать бегунок — возвращаем прежнее значение.
-  track.addEventListener('pointercancel', () => { if (!drag) return; const back = drag.start; drag = null; set(back); });
-  track.addEventListener('lostpointercapture', () => { if (drag) { const back = drag.start; drag = null; set(back); } });
+  const cancel = () => { if (!drag) return; const back = drag.start; drag = null; set(back); };
+  track.addEventListener('pointercancel', cancel);
+  track.addEventListener('lostpointercapture', cancel);
   track.addEventListener('keydown', (ev) => {
-    const cur = committed;
-    let n;
-    if (ev.key === 'ArrowRight' || ev.key === 'ArrowUp') n = cur == null ? 4 : Math.min(7, cur + 1);
-    else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowDown') n = cur == null ? 4 : Math.max(1, cur - 1);
-    else if (ev.key === 'Home') n = 1;
-    else if (ev.key === 'End') n = 7;
-    else if ((ev.key === 'Delete' || ev.key === 'Backspace') && cur != null) n = null;
-    else return;
-    ev.preventDefault();
-    commit(n);
+    const steps = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 10, PageDown: -10, Home: -100, End: 100 };
+    if (ev.key in steps) { ev.preventDefault(); nudge(steps[ev.key]); }
+    else if ((ev.key === 'Delete' || ev.key === 'Backspace') && v != null) { ev.preventDefault(); set(null); commitNow(); }
   });
   paint(v);
   return el;
@@ -1474,22 +1502,22 @@ function renderToday(v) {
       const x = byDate.get(d);
       const has = x && !isEmpty(x);
       stripEl.append(h('button', { type: 'button', onclick: () => openDay(d),
-        'aria-label': fmtDate(d) + ': ' + (has ? (x.mood ? MOODS[x.mood].t : 'запись без оценки') : 'нет записи') },
-      h('span', { class: 'c' + (has && !x.mood ? ' has' : ''), style: has && x.mood ? `background: var(--m${x.mood})` : null }),
+        'aria-label': fmtDate(d) + ': ' + (has ? (x.mood ? moodText(x) : 'запись без оценки') : 'нет записи') },
+      h('span', { class: 'c' + (has && !x.mood ? ' has' : ''), style: has && x.mood ? `background: ${entryColor(x)}` : null }),
       h('span', { class: i === 0 ? 'today-mark' : null, text: WD_S[parseYmd(d).getDay()] })));
     }
   };
-  const slider = moodSlider({ value: e ? e.mood : null, big: true,
+  const slider = moodSlider({ value: e && e.mood != null ? e.score : null, big: true,
     onInput: (x) => sky.style.setProperty('--sky', skyColor(x)),
     onCommit: async (m) => {
       const cur = byDate.get(t) || blankEntry(t);
-      cur.mood = m;
+      setScore(cur, m);
       if (entries.has(cur.id) && isEmpty(cur)) await deleteEntry(cur);
       else await saveEntry(cur);
       fillStreak(); fillEntry(); fillStrip();
       toast(m ? 'Настроение сохранено' : 'Оценка снята');
     } });
-  const sky = h('section', { class: 'sky', style: `--sky: ${skyColor(e ? e.mood : null)}` },
+  const sky = h('section', { class: 'sky', style: `--sky: ${skyColor(e && e.mood != null ? e.score : null)}` },
     h('div', { class: 'top' },
       h('div', { class: 'date-hero' }, h('div', { class: 'd', text: fmtDate(t, false) }), h('div', { class: 'w', text: cap(weekday(t)) + ', ' + t.slice(0, 4) })),
       settingsBtn()),
@@ -1521,9 +1549,9 @@ function memoryCard(e, when) {
   return h('button', { class: 'memory' + (vis ? ' has-photo' : ''), type: 'button', onclick: () => openEntry(e.id) },
     vis ? h('img', { class: 'ph', alt: '', 'data-thumb': vis.id }) : null,
     h('div', { class: 'body' },
-      h('div', { class: 'when' }, e.mood ? h('span', { class: 'dot', style: `background: var(--m${e.mood})` }) : null,
+      h('div', { class: 'when' }, e.mood ? h('span', { class: 'dot', style: `background: ${entryColor(e)}` }) : null,
         h('span', { text: when + ', ' + fmtDate(e.date) })),
-      h('div', { class: 'thesis', text: e.title || firstSentence(bodyText(e)) || (e.mood ? MOODS[e.mood].e + ' ' + MOODS[e.mood].t : 'Запись без текста') })));
+      h('div', { class: 'thesis', text: e.title || firstSentence(bodyText(e)) || (e.mood ? MOODS[e.mood].e + ' ' + moodText(e) : 'Запись без текста') })));
 }
 function memoriesSection() {
   const t = todayStr(), md = t.slice(5), y = +t.slice(0, 4);
@@ -1612,11 +1640,12 @@ function entryItem(e, terms) {
   const body = bodyText(e);
   const lead = e.title || firstSentence(body, 110) || (e.mood ? MOODS[e.mood].t : 'Без текста');
   const rest = e.title || terms.length ? body : body.slice(firstSentence(body, 110).replace(/…$/, '').length).trim();
-  return h('button', { class: 'item', type: 'button', style: e.mood ? `--mc: var(--m${e.mood})` : null, onclick: () => openEntry(e.id) },
+  return h('button', { class: 'item', type: 'button', style: e.mood ? `--mc: ${entryColor(e)}` : null, onclick: () => openEntry(e.id) },
     h('div', { class: 'day' }, h('div', { class: 'n', text: d.getDate() }), h('div', { class: 'w', text: WD_S[d.getDay()] })),
     h('div', { class: 'grow' },
       h('div', { class: 'top' },
-        e.mood ? h('span', { class: 'e', role: 'img', 'aria-label': MOODS[e.mood].t, text: MOODS[e.mood].e }) : null,
+        e.mood ? h('span', { class: 'e', role: 'img', 'aria-label': moodText(e), text: MOODS[e.mood].e }) : null,
+        e.mood ? h('span', { class: 'sc', 'aria-hidden': 'true', text: fmtScore(e.score) }) : null,
         h('span', { class: 't' }, highlight(lead, terms)),
         h('span', { class: 'flags' }, e.favorite ? icon('star', 'filled') : null, e.milestone ? icon('flag', 'filled') : null,
           e.media.some((m) => m.kind === 'video') ? icon('video') : null, e.media.some((m) => m.kind === 'audio') ? icon('mic') : null)),
@@ -1746,13 +1775,13 @@ function renderCalendar(v) {
       else if (has) cls += ' noted';
       if (ds === t) cls += ' today';
       if (ds > t) cls += ' future';
-      grid.append(h('button', { class: cls, type: 'button', text: d, style: has && e.mood ? `--mc: var(--m${e.mood})` : null,
-        'aria-label': fmtDate(ds) + ': ' + (has ? (e.mood ? MOODS[e.mood].t : 'запись без оценки') : 'нет записи'), onclick: () => openDay(ds) }));
+      grid.append(h('button', { class: cls, type: 'button', text: d, style: has && e.mood ? `--mc: ${entryColor(e)}` : null,
+        'aria-label': fmtDate(ds) + ': ' + (has ? (e.mood ? moodText(e) : 'запись без оценки') : 'нет записи'), onclick: () => openDay(ds) }));
     }
     months.append(h('div', { class: 'mon' }, h('h3', { text: MONTHS[m] }), grid));
   }
   const ye = sorted.filter((e) => e.date.startsWith(String(calYear)) && !isEmpty(e));
-  const a = avgOf(ye.filter((e) => e.mood).map((e) => e.mood));
+  const a = avgOf(ye.filter((e) => e.mood).map((e) => e.score));
   v.append(head('Календарь'), ...sysBanners(),
     h('div', { class: 'yearbar' },
       h('button', { class: 'btn icon', type: 'button', 'aria-label': 'Предыдущий год', disabled: calYear <= minY, onclick: () => { calYear--; renderView(); } }, icon('left')),
@@ -1761,7 +1790,7 @@ function renderCalendar(v) {
     h('div', { class: 'legend' }, [1, 2, 3, 4, 5, 6, 7].map((m) => h('span', null, h('i', { class: 'dot', style: `background: var(--m${m})` }), MOODS[m].e)),
       h('span', null, h('i', { class: 'dot', style: 'box-shadow: inset 0 0 0 1.5px var(--muted)' }), 'без оценки')),
     months,
-    h('p', { class: 'cal-sum', text: ye.length ? `За ${calYear} год: ${ye.length} ${plural(ye.length, ['запись', 'записи', 'записей'])}, среднее настроение ${fmt1(a)}${a ? ' ' + MOODS[Math.round(a)].e : ''}` : `За ${calYear} год записей пока нет` }));
+    h('p', { class: 'cal-sum', text: ye.length ? `За ${calYear} год: ${ye.length} ${plural(ye.length, ['запись', 'записи', 'записей'])}, среднее настроение ${fmtPts(a)}${a != null ? ' ' + MOODS[levelOf(a)].e : ''}` : `За ${calYear} год записей пока нет` }));
 }
 const avgOf = (arr) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : null;
 
@@ -1855,7 +1884,7 @@ function renderEntryView(e, s) {
   const body = h('div', { class: 'sheet-body' },
     dateBlock(e.date),
     (e.mood || e.emotions.length) ? h('div', { class: 'row', style: 'margin-top:14px' },
-      e.mood ? h('span', { class: 'pill', style: `--mc: var(--m${e.mood})` }, faceIcon(e.mood, 28), MOODS[e.mood].t) : null,
+      e.mood ? h('span', { class: 'pill', style: `--mc: ${entryColor(e)}` }, faceIcon(e.score, 28), moodText(e)) : null,
       e.emotions.map((x) => h('span', { class: 'chip static', text: x }))) : null,
     e.title ? h('div', { class: 'read-title', text: e.title }) : null,
     readParts(e),
@@ -1971,7 +2000,7 @@ function renderEditorInto(e, s, opts = {}) {
   } });
   dateInput.value = e.date;
 
-  const slider = moodSlider({ value: e.mood, onCommit: (m) => { e.mood = m; changed(); } });
+  const slider = moodSlider({ value: e.mood != null ? e.score : null, onCommit: (sc) => { setScore(e, sc); changed(); } });
 
   const emoList = [...settings.emotions];
   for (const x of e.emotions) if (!emoList.some((y) => norm(y) === norm(x))) emoList.push(x);
@@ -2406,20 +2435,28 @@ function tipLayer(plot) {
 
 function monthlyAvg(year) {
   const sum = Array(12).fill(0), cnt = Array(12).fill(0);
-  for (const e of entries.values()) if (e.mood && e.date.startsWith(year)) { const m = +e.date.slice(5, 7) - 1; sum[m] += e.mood; cnt[m]++; }
+  for (const e of entries.values()) if (e.mood && e.date.startsWith(year)) { const m = +e.date.slice(5, 7) - 1; sum[m] += e.score; cnt[m]++; }
   return sum.map((s, i) => cnt[i] ? s / cnt[i] : null);
 }
+// Ось настроения в пунктах: всегда включает 0, шаг подписей 10 (или 25, если разброс большой).
+function scoreDomain(vals, minSpan = 20) {
+  let lo = Math.max(SCORE_MIN, Math.floor((Math.min(0, ...vals) - 3) / 10) * 10);
+  let hi = Math.min(SCORE_MAX, Math.ceil((Math.max(0, ...vals) + 3) / 10) * 10);
+  while (hi - lo < minSpan) { if (hi < SCORE_MAX) hi += 10; if (hi - lo < minSpan && lo > SCORE_MIN) lo -= 10; }
+  const step = hi - lo > 60 ? 25 : 10, ticks = [];
+  for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) ticks.push(t);
+  return { lo, hi, ticks };
+}
 function lineChart(plot, W, series) {
-  const H = 240, ml = 30, mr = 44, mt = 16, mb = 26;
+  const H = 240, ml = 34, mr = 44, mt = 16, mb = 26;
   const iw = Math.max(120, W - ml - mr), ih = H - mt - mb;
   const all = series.flatMap((s) => s.values).filter((v) => v != null);
-  let lo = Math.max(1, Math.floor(Math.min(4, ...all) - 0.3)), hi = Math.min(7, Math.ceil(Math.max(4, ...all) + 0.3));
-  if (hi - lo < 2) { if (hi < 7) hi++; else lo--; }
+  const { lo, hi, ticks } = scoreDomain(all);
   const x = (i) => ml + (i + 0.5) * iw / 12, y = (v) => mt + (hi - v) / (hi - lo) * ih;
-  const svg = S('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': 'Среднее настроение по месяцам' });
-  for (let v = lo; v <= hi; v++) {
-    svg.append(S('line', { x1: ml, x2: ml + iw, y1: y(v), y2: y(v), class: v === 4 ? 'axis' : 'grid', 'stroke-dasharray': v === 4 ? '4 4' : null }));
-    svg.append(S('text', { x: ml - 6, y: y(v) + 5, 'text-anchor': 'end', style: 'font-size:14px' }, MOODS[v].e));
+  const svg = S('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': 'Среднее настроение по месяцам, пункты от −50 до +50' });
+  for (const v of ticks) {
+    svg.append(S('line', { x1: ml, x2: ml + iw, y1: y(v), y2: y(v), class: v === 0 ? 'axis' : 'grid', 'stroke-dasharray': v === 0 ? '4 4' : null }));
+    svg.append(S('text', { x: ml - 6, y: y(v) + 4, 'text-anchor': 'end', style: 'font-variant-numeric: tabular-nums' }, fmtScore(v)));
   }
   const narrow = iw < 420;
   for (let i = 0; i < 12; i++) svg.append(S('text', { x: x(i), y: H - 6, 'text-anchor': 'middle' }, narrow ? MONTHS[i][0] : MONTHS_S[i]));
@@ -2433,7 +2470,7 @@ function lineChart(plot, W, series) {
   }
   if (strong) {
     svg.append(S('path', { d: pathD(strong.values), fill: 'none', 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', style: 'stroke: var(--ink)' }));
-    strong.values.forEach((v, i) => { if (v != null) svg.append(S('circle', { cx: x(i), cy: y(v), r: 5, style: `fill: var(--m${Math.round(v)}); stroke: var(--surface); stroke-width: 2` })); });
+    strong.values.forEach((v, i) => { if (v != null) svg.append(S('circle', { cx: x(i), cy: y(v), r: 5, style: `fill: ${scoreColor(v)}; stroke: var(--surface); stroke-width: 2` })); });
     const li = lastIdx(strong.values);
     if (li >= 0) labels.push({ x: x(li) + 10, y: y(strong.values[li]) + 4, t: strong.label, strong: true });
   }
@@ -2453,7 +2490,7 @@ function lineChart(plot, W, series) {
     let top = mt + ih;
     for (const s of [strong, ...others].filter(Boolean)) {
       const v = s.values[i];
-      if (v != null) { lines.push(s.label + ': ' + fmt1(v) + ' ' + MOODS[Math.round(v)].e); top = Math.min(top, y(v)); }
+      if (v != null) { lines.push(s.label + ': ' + fmtPts(v) + ' ' + MOODS[levelOf(v)].e); top = Math.min(top, y(v)); }
     }
     if (lines.length === 1) lines.push('нет оценок');
     tip.show(x(i) * k, top * k, lines, ev.pointerType !== 'mouse');
@@ -2484,33 +2521,31 @@ function barChart(plot, W, { labels, values, colors, title, emoji = false, fmtV 
   plot.append(svg);
 }
 function devChart(plot, W, { labels, values, counts, title }) {
-  const H = 196, ml = 30, mr = 6, mt = 22, mb = 28;
+  const H = 196, ml = 34, mr = 6, mt = 22, mb = 28;
   const iw = W - ml - mr, ih = H - mt - mb, n = values.length, step = iw / n;
-  const vals = values.filter((v) => v != null);
-  const lo = Math.max(1, Math.min(3.5, Math.floor((Math.min(4, ...vals) - 0.3) * 2) / 2));
-  const hi = Math.min(7, Math.max(4.5, Math.ceil((Math.max(4, ...vals) + 0.3) * 2) / 2));
+  const { lo, hi, ticks } = scoreDomain(values.filter((v) => v != null));
   const y = (v) => mt + (hi - v) / (hi - lo) * ih;
   const svg = S('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: 'img', 'aria-label': title });
-  for (let v = Math.ceil(lo); v <= Math.floor(hi); v++) {
-    svg.append(S('line', { x1: ml, x2: ml + iw, y1: y(v), y2: y(v), class: v === 4 ? 'axis' : 'grid' }));
-    svg.append(S('text', { x: ml - 6, y: y(v) + 5, 'text-anchor': 'end', style: 'font-size:13px' }, MOODS[v].e));
+  for (const v of ticks) {
+    svg.append(S('line', { x1: ml, x2: ml + iw, y1: y(v), y2: y(v), class: v === 0 ? 'axis' : 'grid' }));
+    svg.append(S('text', { x: ml - 6, y: y(v) + 4, 'text-anchor': 'end', style: 'font-variant-numeric: tabular-nums' }, fmtScore(v)));
   }
-  const bw = Math.min(46, step * 0.6), base = y(4);
+  const bw = Math.min(46, step * 0.6), base = y(0);
   values.forEach((v, i) => {
     const cx = ml + step * (i + 0.5);
     svg.append(S('text', { x: cx, y: H - 7, 'text-anchor': 'middle' }, labels[i]));
     if (v == null) { svg.append(S('text', { x: cx, y: base - 6, 'text-anchor': 'middle' }, '—')); return; }
-    const up = v >= 4, top = Math.min(y(v), base), bh = Math.max(1.5, Math.abs(y(v) - base));
+    const up = v >= 0, top = Math.min(y(v), base), bh = Math.max(1.5, Math.abs(y(v) - base));
     const p = S('path', { d: roundedBar(cx - bw / 2, up ? base - bh : base, bw, bh, 4, up ? 'top' : 'bottom'), style: `fill: var(${up ? '--m6' : '--m2'})` });
-    p.append(S('title', null, labels[i] + ': ' + fmt1(v) + ', ' + nDays(counts[i])));
+    p.append(S('title', null, labels[i] + ': ' + fmtPts(v) + ', ' + nDays(counts[i])));
     svg.append(p);
-    svg.append(S('text', { x: cx, y: up ? top - 6 : base + bh + 14, 'text-anchor': 'middle', class: 'lbl' }, fmt1(v)));
+    svg.append(S('text', { x: cx, y: up ? top - 6 : base + bh + 14, 'text-anchor': 'middle', class: 'lbl' }, fmtPts(v)));
   });
   plot.append(svg);
 }
 function influence(list, keysOf) {
   const all = list.filter((e) => e.mood);
-  const tot = all.reduce((s, e) => s + e.mood, 0), N = all.length;
+  const tot = all.reduce((s, e) => s + e.score, 0), N = all.length;
   const map = new Map();
   for (const e of all) {
     const seen = new Set();
@@ -2518,7 +2553,7 @@ function influence(list, keysOf) {
       if (seen.has(k)) continue;
       seen.add(k);
       const r = map.get(k) || { label, sum: 0, n: 0 };
-      r.sum += e.mood; r.n++; map.set(k, r);
+      r.sum += e.score; r.n++; map.set(k, r);
     }
   }
   const out = [];
@@ -2531,11 +2566,11 @@ function influence(list, keysOf) {
 }
 const topByEffect = (items, k = 10) => [...items].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, k).sort((a, b) => b.delta - a.delta);
 function divRows(items) {
-  const max = Math.max(0.5, ...items.map((i) => Math.abs(i.delta)));
-  return h('div', { class: 'drows' }, items.map((i) => h('div', { class: 'drow', title: i.label + ': в среднем ' + fmt1(i.avg) + ', ' + nDays(i.n) },
+  const max = Math.max(5, ...items.map((i) => Math.abs(i.delta)));
+  return h('div', { class: 'drows' }, items.map((i) => h('div', { class: 'drow', title: i.label + ': в среднем ' + fmtPts(i.avg) + ', ' + nDays(i.n) },
     h('div', { class: 'dl', text: i.label }),
     h('div', { class: 'dbar' }, h('i', { class: i.delta >= 0 ? 'pos' : 'neg', style: `width:${(Math.abs(i.delta) / max * 50).toFixed(1)}%` })),
-    h('div', { class: 'dv' }, (i.delta >= 0 ? '+' : '−') + fmt1(Math.abs(i.delta)), h('small', { text: nDays(i.n) })))));
+    h('div', { class: 'dv' }, fmtPts(i.delta), h('small', { text: nDays(i.n) })))));
 }
 function freqRows(items) {
   const max = Math.max(1, ...items.map((i) => i.n));
@@ -2575,14 +2610,14 @@ function renderStats(v) {
   const period = Y === 'all' ? daysBetween(asc[0] || t, t) + 1
     : yr === cy ? daysBetween(cy + '-01-01', t) + 1 : (new Date(yr, 1, 29).getMonth() === 1 ? 366 : 365);
   const pct = Math.min(100, Math.round(list.length / Math.max(1, period) * 100));
-  const avg = avgOf(ml.map((e) => e.mood));
+  const avg = avgOf(ml.map((e) => e.score));
   const vis = list.reduce((s, e) => s + e.media.filter((m) => m.kind !== 'audio').length, 0);
   const voice = list.reduce((s, e) => s + e.media.filter((m) => m.kind === 'audio').length, 0);
   const words = list.reduce((s, e) => s + wordsIn(bodyText(e)) + wordsIn(e.title), 0);
   const kpi = (val, label, small) => h('div', { class: 'kpi' }, h('div', { class: 'v' }, String(val), small ? h('small', { text: small }) : null), h('div', { class: 'k', text: label }));
   v.append(h('div', { class: 'kpis' },
     kpi(list.length, plural(list.length, ['запись', 'записи', 'записей']) + ', это ' + pct + '% дней'),
-    kpi(fmt1(avg), 'среднее настроение', avg ? MOODS[Math.round(avg)].e : null),
+    kpi(fmtPts(avg), 'среднее настроение, от −50 до +50', avg != null ? MOODS[levelOf(avg)].e : null),
     kpi(longestStreak(asc), 'дней подряд — рекорд'),
     (Y === 'all' || yr === cy) ? kpi(streakInfo().n, 'текущая серия') : null,
     kpi(vis, 'фото и видео', voice ? '+ ' + voice + ' голос.' : null),
@@ -2603,14 +2638,14 @@ function renderStats(v) {
   const others = withData.filter((y) => y !== strongY).slice(0, Y === 'all' ? 6 : 4);
   const series = [{ label: String(strongY), values: monthlyAvg(String(strongY)), strong: true }, ...others.map((y) => ({ label: String(y), values: monthlyAvg(String(y)) }))];
   add(Y === 'all' ? 'Настроение по месяцам, все годы' : 'Настроение по месяцам',
-    others.length ? 'Среднее за месяц. Тонкие линии — другие годы для сравнения. Коснитесь графика, чтобы увидеть значения.' : 'Среднее за месяц. Коснитесь графика, чтобы увидеть значения.',
+    others.length ? 'Среднее за месяц в пунктах, выше 0 — лучше нейтрального. Тонкие линии — другие годы. Коснитесь графика, чтобы увидеть значения.' : 'Среднее за месяц в пунктах, выше 0 — лучше нейтрального. Коснитесь графика, чтобы увидеть значения.',
     (p, w) => lineChart(p, w, series), 'full');
 
   if (Y === 'all' && withData.length > 1) {
     const yAsc = [...withData].sort();
-    add('Настроение по годам', 'Среднее за год; выше линии 😐 — лучше нейтрального', (p, w) => devChart(p, w, {
+    add('Настроение по годам', 'Среднее за год в пунктах; выше 0 — лучше нейтрального', (p, w) => devChart(p, w, {
       title: 'Настроение по годам', labels: yAsc.map(String),
-      values: yAsc.map((y) => avgOf(all.filter((e) => e.mood && e.date.startsWith(String(y))).map((e) => e.mood))),
+      values: yAsc.map((y) => avgOf(all.filter((e) => e.mood && e.date.startsWith(String(y))).map((e) => e.score))),
       counts: yAsc.map((y) => moodCount(y)) }));
     add('Записей по годам', null, (p, w) => barChart(p, w, {
       title: 'Записей по годам', labels: yAsc.map(String), colors: ['var(--ink)'],
@@ -2619,18 +2654,21 @@ function renderStats(v) {
 
   // 2. Распределение оценок
   const dist = [1, 2, 3, 4, 5, 6, 7].map((m) => ml.filter((e) => e.mood === m).length);
-  add('Как распределились оценки', 'Сколько дней с каждой оценкой', (p, w) => barChart(p, w, {
+  const edges = {};
+  for (let sc = SCORE_MIN; sc <= SCORE_MAX; sc++) { const l = levelOf(sc); edges[l] = edges[l] ? [edges[l][0], sc] : [sc, sc]; }
+  const band = (m) => fmtScore(edges[m][0]) + '…' + fmtScore(edges[m][1]);
+  add('Как распределились оценки', 'Сколько дней в каждой части шкалы, от −50 до +50', (p, w) => barChart(p, w, {
     title: 'Распределение оценок', labels: [1, 2, 3, 4, 5, 6, 7].map((m) => MOODS[m].e), emoji: true,
-    colors: [1, 2, 3, 4, 5, 6, 7].map((m) => `var(--m${m})`), values: dist, tipOf: (i) => MOODS[i + 1].t + ': ' + nDays(dist[i]) }));
+    colors: [1, 2, 3, 4, 5, 6, 7].map((m) => `var(--m${m})`), values: dist, tipOf: (i) => MOODS[i + 1].t + ' (' + band(i + 1) + '): ' + nDays(dist[i]) }));
 
   // 3. Дни недели
   const wd = Array.from({ length: 7 }, () => []);
-  for (const e of ml) wd[(parseYmd(e.date).getDay() + 6) % 7].push(e.mood);
-  add('Дни недели', 'Среднее настроение; выше линии 😐 — лучше нейтрального', (p, w) => devChart(p, w, {
+  for (const e of ml) wd[(parseYmd(e.date).getDay() + 6) % 7].push(e.score);
+  add('Дни недели', 'Среднее настроение в пунктах; выше 0 — лучше нейтрального', (p, w) => devChart(p, w, {
     title: 'Настроение по дням недели', labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], values: wd.map(avgOf), counts: wd.map((a) => a.length) }));
 
   // 4. Влияние
-  const effSub = 'На сколько среднее настроение в такие дни выше (+) или ниже (−), чем в остальные. Учитывается, если отмечено хотя бы в 3 днях.';
+  const effSub = 'На сколько пунктов среднее настроение в такие дни выше (+) или ниже (−), чем в остальные. Учитывается, если отмечено хотя бы в 3 днях.';
   const fx = influence(list, (e) => e.factors.map((f) => [f, factorName(f)]));
   addNode('Что влияет на настроение', effSub, fx.length ? divRows(fx) : h('p', { class: 'muted small', text: 'Отмечайте факторы дня в записях — здесь появится их влияние.' }));
   const tg = topByEffect(influence(list, (e) => e.tags.map((x) => [norm(x), '#' + x])));
@@ -2640,8 +2678,8 @@ function renderStats(v) {
 
   // 5. Сон
   const sl = [[], [], [], []];
-  for (const e of ml) if (e.sleep != null) sl[e.sleep < 6 ? 0 : e.sleep < 7 ? 1 : e.sleep < 8 ? 2 : 3].push(e.mood);
-  if (sl.some((a) => a.length >= 3)) add('Сон и настроение', 'Среднее настроение в зависимости от сна накануне', (p, w) => devChart(p, w, {
+  for (const e of ml) if (e.sleep != null) sl[e.sleep < 6 ? 0 : e.sleep < 7 ? 1 : e.sleep < 8 ? 2 : 3].push(e.score);
+  if (sl.some((a) => a.length >= 3)) add('Сон и настроение', 'Среднее настроение в пунктах в зависимости от сна накануне', (p, w) => devChart(p, w, {
     title: 'Сон и настроение', labels: ['< 6 ч', '6–7 ч', '7–8 ч', '8+ ч'], values: sl.map((a) => a.length ? avgOf(a) : null), counts: sl.map((a) => a.length) }));
 
   // 6. Эмоции
@@ -2657,19 +2695,19 @@ function renderStats(v) {
 function yearSummary(list, Y) {
   const wm = list.filter((e) => e.mood);
   const weight = (e) => bodyText(e).length + e.title.length * 3 + e.media.length * 200;
-  const best = wm.filter((e) => e.mood >= 5).sort((a, b) => b.mood - a.mood || weight(b) - weight(a)).slice(0, 5);
-  const hard = wm.filter((e) => e.mood <= 3).sort((a, b) => a.mood - b.mood || weight(b) - weight(a)).slice(0, 5);
+  const best = wm.filter((e) => e.score > 8).sort((a, b) => b.score - a.score || weight(b) - weight(a)).slice(0, 5);
+  const hard = wm.filter((e) => e.score < -8).sort((a, b) => a.score - b.score || weight(b) - weight(a)).slice(0, 5);
   const ms = list.filter((e) => e.milestone).sort((a, b) => a.date.localeCompare(b.date));
   const rank = (arr, empty) => arr.length ? h('div', { class: 'rank' }, arr.map((e) => h('button', { type: 'button', onclick: () => openEntry(e.id) },
     h('span', { class: 'e', text: e.mood ? MOODS[e.mood].e : '•' }),
     h('span', { style: 'min-width:0' }, h('div', { class: 'tx', text: e.title || firstSentence(bodyText(e), 90) || (e.mood ? MOODS[e.mood].t : 'Без текста') }), h('div', { class: 'd', text: fmtDate(e.date, false) })),
-    h('span')))) : h('p', { class: 'muted small', text: empty });
+    h('span', { class: 'sc', text: e.mood ? fmtScore(e.score) : '' })))) : h('p', { class: 'muted small', text: empty });
   const tops = (label, items, prefix = '') => items.length ? h('div', null, h('div', { class: 'h3', text: label }),
     h('div', { class: 'tops' }, items.map((i) => h('span', { class: 'chip static', text: prefix + i.label + ' ' + i.n })))) : null;
   return h('section', { class: 'chart full' }, h('h2', { text: 'Итоги ' + Y + ' года' }),
     h('p', { class: 'sub', text: 'Коснитесь дня, чтобы открыть запись' }),
     h('div', { class: 'twocol' },
-      h('div', null, h('div', { class: 'h3', text: 'Лучшие дни' }), rank(best, 'Дней с оценкой 5–7 пока нет')),
+      h('div', null, h('div', { class: 'h3', text: 'Лучшие дни' }), rank(best, 'Дней с оценкой выше +8 пока нет')),
       h('div', null, h('div', { class: 'h3', text: 'Трудные дни' }), rank(hard, 'Трудных дней не было'))),
     ms.length ? h('div', null, h('div', { class: 'h3', text: 'Вехи года' }), rank(ms, '')) : null,
     h('div', { class: 'twocol' },
@@ -2744,7 +2782,8 @@ async function generateDemo(onProgress) {
       const eff = { sport: 0.5, walk: 0.3, overwork: -0.8, dayoff: 0.4, friends: 0.7, family: 0.3, trip: 0.9, sick: -1.7, alcohol: -0.2, screen: -0.3 };
       for (const k of f) x += eff[k];
       if (ms) x += 1.5;
-      const mood = Math.max(1, Math.min(7, Math.round(x)));
+      const score = Math.max(SCORE_MIN, Math.min(SCORE_MAX, Math.round((x - 4) * 50 / 3 + (rnd() - 0.5) * 10)));
+      const mood = levelOf(score);
       const tags = [];
       if (!weekend && chance(0.5)) tags.push('работа');
       if (chance(0.15)) tags.push('проект');
@@ -2765,7 +2804,7 @@ async function generateDemo(onProgress) {
       const afternoon = [pick(mood >= 5 ? POS : mood >= 4 ? MID : NEG), ...fx.filter((x) => x !== FX.sport && x !== FX.friends)].join(' ');
       const evening = [fx.includes(FX.friends) ? FX.friends : '', chance(0.5) ? pick(mood >= 5 ? EVE_POS : mood >= 4 ? EVE_MID : EVE_NEG) : ''].filter(Boolean).join(' ');
       const e = blankEntry(d);
-      Object.assign(e, { mood, emotions, tags: [...new Set(tags)], people: [...new Set(people)], factors: f, sleep: chance(0.85) ? sleep : null,
+      Object.assign(e, { mood, score, emotions, tags: [...new Set(tags)], people: [...new Set(people)], factors: f, sleep: chance(0.85) ? sleep : null,
         morning, afternoon, evening, title: ms ? ms[1] : (mood >= 6 && chance(0.35) ? pick(TITLES) : ''),
         milestone: !!ms, favorite: !!ms || (mood >= 6 && chance(0.06)),
         createdAt: date.getTime() + 20 * 3600e3, updatedAt: date.getTime() + 20 * 3600e3 });

@@ -1,17 +1,18 @@
 # Правила для Codex: PWA «Дневник»
 
-Это рабочее приложение v1.1.0 с данными пользователя на его устройствах. Задача — развивать и чинить его, а не переписывать. Полное ТЗ — в `SPEC.md`.
+Это рабочее приложение v1.2.0 с данными пользователя на его устройствах. Задача — развивать и чинить его, а не переписывать. Полное ТЗ — в `SPEC.md`.
 
 ## Жёсткие правила
 
 1. **Не терять данные.** Пользователь хранит дневник за годы только в IndexedDB на iPhone и iPad. Меняешь форму данных — подними `SCHEMA_VERSION` и добавь шаг в `migrateData()`; меняешь хранилища или индексы — подними `DB_VERSION` и дополни `onupgradeneeded`, проверяя `oldVersion`. Никогда не удаляй и не переименовывай поля без миграции.
-2. **Совместимость копий.** Старые архивы `diary-*.zip` (format 1 и 2) должны импортироваться и дальше. Если меняешь `data.json` — подними `format` и поддержи чтение старого.
-3. **Версия при каждом изменении:** `CACHE` в `sw.js` (сейчас `diary-v2` → дальше `diary-v3`) и `APP_VERSION` в `index.html`. Иначе iOS покажет старую версию из кеша.
+2. **Совместимость копий.** Старые архивы `diary-*.zip` (format 1, 2 и 3) должны импортироваться и дальше. Если меняешь `data.json` — подними `format` и поддержи чтение старого.
+3. **Версия при каждом изменении:** `CACHE` в `sw.js` (сейчас `diary-v3` → дальше `diary-v4`) и `APP_VERSION` в `index.html`. Иначе iOS покажет старую версию из кеша.
 4. **Плоская структура.** Все файлы в корне, без папок — пользователь загружает их на GitHub с iPad по одному. Пути только относительные (`sw.js`, а не `/sw.js`).
 5. **Без зависимостей.** Никаких фреймворков, сборщиков, CDN, внешних шрифтов и запросов в сеть: приложение работает офлайн. Весь код — в `index.html`.
 6. **Никаких личных данных в репозитории.** Репозиторий публичный; записи живут только на устройстве.
-7. **Даты** — только локальные строки `YYYY-MM-DD` через `ymd()` / `todayStr()`; не используй `toISOString()` для дат.
-8. **Пользовательский текст** вставляется в DOM только через `textContent` (хелпер `h()` делает это сам). `innerHTML` — только для статичных иконок.
+7. **Настроение** — `score` от −50 до +50 — основное значение; `mood` (1–7) всегда выводится из него. Меняй оценку только через `setScore(e, score)`, иначе поля разойдутся.
+8. **Даты** — только локальные строки `YYYY-MM-DD` через `ymd()` / `todayStr()`; не используй `toISOString()` для дат.
+9. **Пользовательский текст** вставляется в DOM только через `textContent` (хелпер `h()` делает это сам). `innerHTML` — только для статичных иконок.
 
 ## Карта `index.html`
 
@@ -19,14 +20,14 @@
 
 | Раздел | Что внутри |
 | --- | --- |
-| Настройки приложения | `APP_VERSION`, `DB_VERSION`, `SCHEMA_VERSION`, `ARCHIVE_FORMAT`, шкала `MOODS`, окна дня `PARTS` и `TEXT_KEYS`, эмоции и факторы по умолчанию |
+| Настройки приложения | `APP_VERSION`, `DB_VERSION`, `SCHEMA_VERSION`, `ARCHIVE_FORMAT`, шкала настроения `SCORE_MIN`/`SCORE_MAX`, `levelOf`, `scoreOfLevel`, `setScore`, `fmtScore`, `fmtPts`, подписи уровней `MOODS`, окна дня `PARTS` и `TEXT_KEYS`, эмоции и факторы по умолчанию |
 | Утилиты | `h()` / `put()` для DOM, иконки, даты, склонения (`plural`), `toast` |
 | IndexedDB, Состояние | `openDB`, `idb.*`, `loadAll`, `migrateData`, `bodyText` (весь текст записи), `saveEntry`, `deleteEntry`, `mergeInto` / `mergeText` |
 | Медиа | уменьшение фото, превью видео, голос (`MediaRecorder`) |
 | ZIP, Резервная копия | свой ZIP с CRC32, `exportArchive`, `importFile`, `mergeImport` |
 | PIN-код | `hashPin` (SHA-256 с солью) |
-| Интерфейс | `makeFace` (лицо настроения), `moodSlider` (бегунок), `moodColor`; вкладки `renderToday`, `renderEntries`, `renderCalendar`, `renderStats`; лист записи `renderEntryView` / `readParts` / `renderEditorInto` (`openEditor(дата, { focus: 'evening' })`); настройки `renderSettings`; экспорт/импорт |
-| Аналитика | SVG-графики `lineChart`, `barChart`, `devChart`, строки влияния `divRows` |
+| Интерфейс | `makeFace` (лицо настроения по score), `moodSlider` (бегунок −50…+50 с кнопками −/+), `scoreColor` / `moodColor`; вкладки `renderToday`, `renderEntries`, `renderCalendar`, `renderStats`; лист записи `renderEntryView` / `readParts` / `renderEditorInto` (`openEditor(дата, { focus: 'evening' })`); настройки `renderSettings`; экспорт/импорт |
+| Аналитика | SVG-графики `lineChart`, `barChart`, `devChart` (ось в пунктах — `scoreDomain`), строки влияния `divRows` |
 | Демо-данные | генератор примеров в отдельной базе `diary-demo` |
 | Запуск | блокировка при возврате из фона, service worker, `init()` |
 
